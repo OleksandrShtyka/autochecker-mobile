@@ -18,8 +18,8 @@ import '../widgets/premium_gate.dart';
 import '../widgets/voice_action_panel.dart';
 import 'food_calorie_screen.dart';
 import 'health_screen.dart';
+import 'profile_screen.dart';
 import 'sessions_screen.dart';
-import 'settings_screen.dart';
 import 'spotify_screen.dart';
 import 'supplements_screen.dart';
 import 'workout_program_screen.dart';
@@ -317,7 +317,7 @@ class _HomeScreenState extends State<HomeScreen>
                 featureIcon: Icons.restaurant_rounded,
                 child: FoodCalorieScreen(key: _calKey),
               ),
-              const SettingsScreen(),
+              const ProfileScreen(),
             ],
           ),
 
@@ -737,7 +737,7 @@ class _HomeScreenState extends State<HomeScreen>
     final rightItems = [
       (3, Icons.event_note_rounded,  Icons.event_note_outlined,  t('tab_program')),
       (4, Icons.camera_alt_rounded,  Icons.camera_alt_outlined,  t('tab_calories')),
-      (5, Icons.person_rounded,      Icons.person_outlined,      t('tab_settings')),
+      (5, Icons.person_rounded,      Icons.person_outlined,      'Profile'),
     ];
 
     return SizedBox(

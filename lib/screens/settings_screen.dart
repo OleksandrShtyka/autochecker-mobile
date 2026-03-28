@@ -336,11 +336,15 @@ class _SettingsScreenState extends State<SettingsScreen>
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Center(
-          child: CircularProgressIndicator(color: teal, strokeWidth: 2));
+      return const Scaffold(
+        backgroundColor: Color(0xFF060F1A),
+        body: Center(child: CircularProgressIndicator(color: teal, strokeWidth: 2)),
+      );
     }
 
-    return AnimatedBuilder(
+    return Scaffold(
+      backgroundColor: const Color(0xFF060F1A),
+      body: AnimatedBuilder(
       animation: _entranceCtrl,
       builder: (context, child) {
         final v = Curves.easeOutCubic.transform(_entranceCtrl.value);
@@ -773,6 +777,7 @@ class _SettingsScreenState extends State<SettingsScreen>
           const SizedBox(height: 16),
         ],
       ),
+    ),
     );
   }
 

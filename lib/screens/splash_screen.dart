@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
@@ -19,6 +20,7 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _ctrl;
+  final AudioPlayer _audio = AudioPlayer();
 
   // Bar: scales in horizontally
   late Animation<double> _barScale;
@@ -72,10 +74,18 @@ class _SplashScreenState extends State<SplashScreen>
     _ctrl.addStatusListener((s) {
       if (s == AnimationStatus.completed) _navigate();
     });
+    _playLaunchSound();
+  }
+
+  Future<void> _playLaunchSound() async {
+    try {
+      await _audio.play(AssetSource('sounds/launch.wav'), volume: 0.6);
+    } catch (_) {}
   }
 
   @override
   void dispose() {
+    _audio.dispose();
     _ctrl.dispose();
     super.dispose();
   }
