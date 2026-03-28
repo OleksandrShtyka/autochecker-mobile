@@ -127,7 +127,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
           const Text('Helper AI', style: TextStyle(color: textPrimary, fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: 6),
           const Text(
-            'Ask anything about AutoChecker\nor general programming questions.',
+            'Ask anything about GYM Tracker\nor your fitness data.',
             textAlign: TextAlign.center,
             style: TextStyle(color: textMuted, fontSize: 13),
           ),

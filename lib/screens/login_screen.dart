@@ -136,20 +136,17 @@ class _LoginScreenState extends State<LoginScreen>
                                 ),
                               ],
                             ),
-                            child: const Text(
-                              'AC',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w800,
-                              ),
+                            child: const Icon(
+                              Icons.fitness_center_rounded,
+                              color: Colors.white,
+                              size: 36,
                             ),
                           ),
                         ),
                         const SizedBox(height: 24),
                         const Center(
                           child: Text(
-                            'AutoChecker',
+                            'GYM Tracker',
                             style: TextStyle(
                               color: textPrimary,
                               fontSize: 28,

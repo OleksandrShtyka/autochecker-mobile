@@ -1,8 +1,8 @@
 name: autochecker_mobile
-description: "AutoChecker Fitness Tracker — mobile companion app."
+description: "GYM Tracker — your personal fitness companion app."
 publish_to: 'none'
 
-version: 2.0.0+3
+version: 2.0.0+13
 
 environment:
   sdk: ^3.11.1
@@ -25,6 +25,10 @@ dependencies:
   workmanager: ^0.9.0
   shared_preferences: ^2.3.2
   speech_to_text: ^7.0.0
+  webview_flutter: ^4.10.0
+  health: ^12.0.0
+  flutter_blue_plus: ^2.2.1
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:

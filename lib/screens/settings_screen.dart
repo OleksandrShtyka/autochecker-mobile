@@ -6,11 +6,16 @@ import 'package:image_picker/image_picker.dart';
 import '../l10n/strings.dart';
 import '../services/ai_analysis_service.dart';
 import '../services/api_service.dart';
+import '../services/bluetooth_service.dart' as bt_svc;
 import '../services/locale_service.dart';
 import '../services/lock_service.dart';
+import '../services/spotify_service.dart';
+import '../services/subscription_service.dart';
 import '../theme.dart';
 import 'login_screen.dart';
+import 'payment_screen.dart';
 import 'pin_setup_screen.dart';
+import 'spotify_auth_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -36,6 +41,16 @@ class _SettingsScreenState extends State<SettingsScreen>
   int _aiFrequencyDays = 1;
   bool _aiAnalyzing = false;
 
+  // Spotify
+  bool _spotifyConnected = false;
+  bool _spotifyConnecting = false;
+
+  // Gelius Bluetooth
+  bool _btConnected = false;
+  int? _btBattery;
+  String? _btDeviceName;
+  bool _btScanning = false;
+
   late AnimationController _entranceCtrl;
 
   @override
@@ -46,10 +61,28 @@ class _SettingsScreenState extends State<SettingsScreen>
       duration: const Duration(milliseconds: 600),
     );
     _load();
+
+    // Listen to BT state
+    bt_svc.BluetoothService.instance.isConnected.addListener(_onBtChange);
+    bt_svc.BluetoothService.instance.batteryLevel.addListener(_onBtChange);
+    bt_svc.BluetoothService.instance.deviceName.addListener(_onBtChange);
+    _onBtChange(); // sync initial values
+  }
+
+  void _onBtChange() {
+    if (!mounted) return;
+    setState(() {
+      _btConnected = bt_svc.BluetoothService.instance.isConnected.value;
+      _btBattery   = bt_svc.BluetoothService.instance.batteryLevel.value;
+      _btDeviceName = bt_svc.BluetoothService.instance.deviceName.value;
+    });
   }
 
   @override
   void dispose() {
+    bt_svc.BluetoothService.instance.isConnected.removeListener(_onBtChange);
+    bt_svc.BluetoothService.instance.batteryLevel.removeListener(_onBtChange);
+    bt_svc.BluetoothService.instance.deviceName.removeListener(_onBtChange);
     _entranceCtrl.dispose();
     super.dispose();
   }
@@ -71,10 +104,12 @@ class _SettingsScreenState extends State<SettingsScreen>
     } catch (_) {}
     final aiEnabled = await AiAnalysisService.instance.isEnabled();
     final aiFreq = await AiAnalysisService.instance.getFrequencyDays();
+    final spotifyConn = await SpotifyService.instance.isConnected;
     if (mounted) {
       setState(() {
         _aiEnabled = aiEnabled;
         _aiFrequencyDays = aiFreq;
+        _spotifyConnected = spotifyConn;
       });
     }
     if (mounted) {
@@ -250,6 +285,40 @@ class _SettingsScreenState extends State<SettingsScreen>
           ),
         ) ??
         false;
+  }
+
+  Future<void> _connectSpotify() async {
+    setState(() => _spotifyConnecting = true);
+    try {
+      final authUrl = await ApiService.instance.getSpotifyAuthUrl();
+      if (!mounted) return;
+      final code = await Navigator.of(context).push<String>(
+        MaterialPageRoute(
+          builder: (_) => SpotifyAuthScreen(authUrl: authUrl),
+        ),
+      );
+      if (code != null) {
+        await SpotifyService.instance.exchangeCode(code);
+        await SpotifyService.instance.fetchCurrentTrack();
+        if (mounted) setState(() => _spotifyConnected = true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Spotify: ${e.toString()}')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _spotifyConnecting = false);
+    }
+  }
+
+  Future<void> _disconnectSpotify() async {
+    final confirm =
+        await _confirmDialog(t('spotify_disconnect_title'), t('spotify_disconnect_body'));
+    if (!confirm) return;
+    await SpotifyService.instance.disconnect();
+    if (mounted) setState(() => _spotifyConnected = false);
   }
 
   Future<void> _logout() async {
@@ -569,6 +638,109 @@ class _SettingsScreenState extends State<SettingsScreen>
 
           const SizedBox(height: 20),
 
+          // Spotify section
+          _sectionHeader(t('section_spotify')),
+          _glassSection(
+            child: _spotifyConnected
+                ? Column(
+                    children: [
+                      ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 4),
+                        leading: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1DB954).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.music_note_rounded,
+                              color: Color(0xFF1DB954), size: 16),
+                        ),
+                        title: Text(t('spotify_connected'),
+                            style: const TextStyle(color: textPrimary)),
+                        subtitle: ValueListenableBuilder(
+                          valueListenable: SpotifyService.instance.currentTrack,
+                          builder: (_, track, __) => Text(
+                            track != null
+                                ? '${track.title} — ${track.artist}'
+                                : t('spotify_nothing_playing'),
+                            style: const TextStyle(
+                                color: Color(0xFF1DB954), fontSize: 12),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        trailing: const Icon(Icons.check_circle_rounded,
+                            color: Color(0xFF1DB954), size: 18),
+                      ),
+                      _divider(),
+                      ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 4),
+                        leading: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEF4444).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.link_off_rounded,
+                              color: Color(0xFFEF4444), size: 16),
+                        ),
+                        title: Text(t('spotify_disconnect'),
+                            style: const TextStyle(
+                                color: Color(0xFFEF4444),
+                                fontWeight: FontWeight.w600)),
+                        onTap: _disconnectSpotify,
+                      ),
+                    ],
+                  )
+                : ListTile(
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    leading: _spotifyConnecting
+                        ? Container(
+                            padding: const EdgeInsets.all(6),
+                            child: const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                  color: Color(0xFF1DB954), strokeWidth: 2),
+                            ),
+                          )
+                        : Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1DB954).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.music_note_rounded,
+                                color: Color(0xFF1DB954), size: 16),
+                          ),
+                    title: Text(t('spotify_connect'),
+                        style: const TextStyle(
+                            color: textPrimary, fontWeight: FontWeight.w600)),
+                    subtitle: Text(t('spotify_connect_sub'),
+                        style: const TextStyle(color: textMuted, fontSize: 12)),
+                    trailing: const Icon(Icons.arrow_forward_ios_rounded,
+                        color: textMuted, size: 14),
+                    onTap: _spotifyConnecting ? null : _connectSpotify,
+                  ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // ── Gelius Connect ───────────────────────────────────────
+          _sectionHeader('GELIUS CONNECT'),
+          _glassSection(child: _buildGeliusSection()),
+
+          const SizedBox(height: 20),
+
+          // ── Subscription ─────────────────────────────────────────
+          _sectionHeader('SUBSCRIPTION'),
+          _glassSection(child: _buildSubscriptionSection()),
+
+          const SizedBox(height: 20),
+
           // Account section
           _sectionHeader(t('section_account')),
           _glassSection(
@@ -601,6 +773,447 @@ class _SettingsScreenState extends State<SettingsScreen>
           const SizedBox(height: 16),
         ],
       ),
+    );
+  }
+
+  // ── Subscription ─────────────────────────────────────────────────────────
+  Widget _buildSubscriptionSection() {
+    return ValueListenableBuilder<SubscriptionStatus>(
+      valueListenable: SubscriptionService.instance.status,
+      builder: (context, status, _) {
+        final isPremium = status.isPremium;
+        final planLabel = status.planLabel;
+        final expiryLabel = status.expiryLabel;
+
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isPremium
+                          ? teal.withValues(alpha: 0.15)
+                          : Colors.white.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      isPremium ? Icons.workspace_premium_rounded : Icons.lock_outline_rounded,
+                      color: isPremium ? teal : textMuted,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isPremium ? 'Premium — $planLabel' : 'Free Plan',
+                          style: TextStyle(
+                            color: isPremium ? teal : textPrimary,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (isPremium && expiryLabel.isNotEmpty)
+                          Text(
+                            expiryLabel,
+                            style: const TextStyle(color: textMuted, fontSize: 12),
+                          )
+                        else if (!isPremium)
+                          const Text(
+                            'Upgrade to unlock AI Coach, Programs & more',
+                            style: TextStyle(color: textMuted, fontSize: 12),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if (!isPremium) ...[
+                const SizedBox(height: 14),
+                GestureDetector(
+                  onTap: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const PaymentScreen()),
+                    );
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0A7B72), teal, Color(0xFF1B5BA0)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(50),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Text(
+                      'Upgrade to Premium',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () async {
+                    await SubscriptionService.instance.refresh();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Subscription status refreshed'),
+                          backgroundColor: Color(0xFF1E293B),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Center(
+                    child: Text(
+                      'Already subscribed? Tap to refresh',
+                      style: TextStyle(color: textMuted, fontSize: 12),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Gelius Connect ────────────────────────────────────────────────────────
+  Widget _buildGeliusSection() {
+    const btBlue = Color(0xFF3B82F6);
+    const btGreen = Color(0xFF22C55E);
+    const btRed = Color(0xFFEF4444);
+    const btAmber = Color(0xFFF59E0B);
+
+    final battColor = _btBattery == null
+        ? textMuted
+        : _btBattery! < 20
+            ? btRed
+            : _btBattery! < 50
+                ? btAmber
+                : btGreen;
+
+    return Column(
+      children: [
+        // ── Device info header ────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+          child: Row(
+            children: [
+              // BT icon with animated ring
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 400),
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: (_btConnected ? btGreen : btBlue)
+                          .withValues(alpha: 0.12),
+                      border: Border.all(
+                        color: (_btConnected ? btGreen : btBlue)
+                            .withValues(alpha: _btConnected ? 0.5 : 0.25),
+                        width: 1.5,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.bluetooth_rounded,
+                    color: _btConnected ? btGreen : btBlue,
+                    size: 22,
+                  ),
+                ],
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Gelius GP-TWS011',
+                      style: TextStyle(
+                        color: textPrimary,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Bluetooth 5.3 TWS',
+                      style: TextStyle(
+                        color: textMuted.withValues(alpha: 0.7),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Status badge
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: (_btConnected ? btGreen : textMuted)
+                      .withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: (_btConnected ? btGreen : textMuted)
+                        .withValues(alpha: 0.25),
+                  ),
+                ),
+                child: Text(
+                  _btConnected ? 'Connected' : 'Offline',
+                  style: TextStyle(
+                    color: _btConnected ? btGreen : textMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // ── Device name (when connected) ──────────────────────────────────
+        if (_btConnected && _btDeviceName != null) ...[
+          _divider(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: btBlue.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.headphones_rounded,
+                      color: btBlue, size: 16),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Пристрій',
+                        style: TextStyle(color: textMuted, fontSize: 11)),
+                    Text(
+                      _btDeviceName!,
+                      style: const TextStyle(
+                        color: textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+
+        // ── Battery level ─────────────────────────────────────────────────
+        _divider(),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: battColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      _btBattery == null
+                          ? Icons.battery_unknown_rounded
+                          : _btBattery! < 20
+                              ? Icons.battery_alert_rounded
+                              : Icons.battery_full_rounded,
+                      color: battColor,
+                      size: 16,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Заряд батареї',
+                            style: TextStyle(color: textMuted, fontSize: 11)),
+                        Text(
+                          _btBattery != null ? '$_btBattery%' : '—',
+                          style: TextStyle(
+                            color: battColor,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_btBattery != null && _btBattery! < 20)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: btRed.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: btRed.withValues(alpha: 0.3)),
+                      ),
+                      child: const Text(
+                        '⚡ Зарядіть',
+                        style: TextStyle(
+                          color: btRed,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              if (_btConnected && _btBattery != null) ...[
+                const SizedBox(height: 10),
+                // Battery bar
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: _btBattery! / 100,
+                    minHeight: 6,
+                    backgroundColor: Colors.white.withValues(alpha: 0.08),
+                    valueColor: AlwaysStoppedAnimation<Color>(battColor),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+
+        // ── Action buttons ────────────────────────────────────────────────
+        _divider(),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Row(
+            children: [
+              // Connect / Disconnect button
+              Expanded(
+                child: GestureDetector(
+                  onTap: _btConnected
+                      ? null
+                      : () async {
+                          setState(() => _btScanning = true);
+                          await bt_svc.BluetoothService.instance.requestPermissionsAndScan();
+                          await Future.delayed(
+                              const Duration(seconds: 13));
+                          if (mounted) setState(() => _btScanning = false);
+                        },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      gradient: _btConnected
+                          ? null
+                          : const LinearGradient(
+                              colors: [Color(0xFF1D4ED8), btBlue],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                      color: _btConnected
+                          ? Colors.white.withValues(alpha: 0.06)
+                          : null,
+                      borderRadius: BorderRadius.circular(14),
+                      border: _btConnected
+                          ? Border.all(
+                              color: Colors.white.withValues(alpha: 0.1))
+                          : null,
+                      boxShadow: _btConnected
+                          ? null
+                          : [
+                              BoxShadow(
+                                color: btBlue.withValues(alpha: 0.35),
+                                blurRadius: 16,
+                                spreadRadius: -4,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                    ),
+                    alignment: Alignment.center,
+                    child: _btScanning
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2))
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                _btConnected
+                                    ? Icons.bluetooth_connected_rounded
+                                    : Icons.bluetooth_searching_rounded,
+                                size: 15,
+                                color: _btConnected
+                                    ? btGreen
+                                    : Colors.white,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                _btConnected ? 'Підключено' : 'Підключити',
+                                style: TextStyle(
+                                  color: _btConnected
+                                      ? btGreen
+                                      : Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
+              ),
+              if (_btConnected) ...[
+                const SizedBox(width: 10),
+                // Refresh battery
+                GestureDetector(
+                  onTap: () => bt_svc.BluetoothService.instance.refreshBattery(),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.07),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.1)),
+                    ),
+                    child: const Icon(Icons.refresh_rounded,
+                        color: textMuted, size: 18),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 

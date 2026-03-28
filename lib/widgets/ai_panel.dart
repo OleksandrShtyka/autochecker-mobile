@@ -4,6 +4,8 @@ import 'package:speech_to_text/speech_to_text.dart';
 
 import '../l10n/strings.dart';
 import '../services/api_service.dart';
+import '../services/health_service.dart';
+import '../services/spotify_service.dart';
 import '../theme.dart';
 
 class AiPanel extends StatefulWidget {
@@ -72,6 +74,27 @@ class _AiPanelState extends State<AiPanel> {
           sb.writeln('  • ${s['workoutType'] ?? '?'} — ${s['durationMin'] ?? 0}min — ${s['volumeKg'] ?? 0}kg');
         }
       }
+      // Health context
+      final health = HealthService.instance.snapshot.value;
+      if (health != null) {
+        sb.writeln('- Steps today: ${health.steps}');
+        if (health.totalCalories > 0) {
+          sb.writeln('- Calories burned today: ${health.totalCalories.round()} kcal');
+        }
+        if (health.heartRateAvg != null) {
+          sb.writeln('- Avg heart rate (last 6h): ${health.heartRateAvg!.round()} bpm');
+        }
+      }
+
+      // Spotify context
+      final track = SpotifyService.instance.currentTrack.value;
+      if (track != null) {
+        sb.writeln(
+          '- Currently playing on Spotify: "${track.title}" by ${track.artist} '
+          '(${track.isPlaying ? "playing" : "paused"})',
+        );
+      }
+
       if (mounted) {
         setState(() {
           _contextString = sb.toString();

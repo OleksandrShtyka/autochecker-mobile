@@ -46,7 +46,7 @@ class LockService {
   Future<bool> authenticateWithBiometrics() async {
     try {
       return await _auth.authenticate(
-        localizedReason: 'Unlock AutoChecker',
+        localizedReason: 'Unlock GYM Tracker',
         options: const AuthenticationOptions(
           biometricOnly: true,
           stickyAuth: true,

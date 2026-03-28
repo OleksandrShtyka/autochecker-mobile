@@ -14,6 +14,23 @@ const _s = <String, Map<String, String>>{
     'tab_supplements':  'Supplements',
     'tab_sessions':     'Sessions',
     'tab_settings':     'Settings',
+    'tab_calories':     'Calories',
+
+    // Calorie analysis
+    'calorie_title':          'Food Analysis',
+    'calorie_empty':          'Take a photo of your meal',
+    'calorie_camera':         'Camera',
+    'calorie_gallery':        'Gallery',
+    'calorie_analyzing':      'Analyzing…',
+    'calorie_result_kcal':    'kcal',
+    'calorie_result_protein': 'Protein',
+    'calorie_result_carbs':   'Carbs',
+    'calorie_result_fat':     'Fat',
+    'calorie_result_weight':  'portion',
+    'calorie_result_g':       'g',
+    'calorie_retry':          'Analyze another',
+    'calorie_scan_btn':       'Scan food',
+    'calorie_no_food':        'No food detected. Try a clearer photo.',
 
     // Dashboard
     'fitness_profile':    'FITNESS PROFILE',
@@ -33,7 +50,7 @@ const _s = <String, Map<String, String>>{
     // AI panel
     'helper_ai':          'Helper AI',
     'ai_hint':            'Ask me anything…',
-    'ai_empty_sub':       'Ask anything about AutoChecker\nor your fitness data.',
+    'ai_empty_sub':       'Ask anything about GYM Tracker\nor your fitness data.',
     'ai_context_loaded':  'I can see your fitness data ✓',
 
     // Settings sections
@@ -58,7 +75,7 @@ const _s = <String, Map<String, String>>{
     'upload_photo':       'Upload photo',
     'change_photo':       'Change photo',
     'remove':             'Remove',
-    'version':            'AutoChecker Mobile v2.0',
+    'version':            'GYM Tracker v2.0',
 
     // Frequency options
     'freq_manual':   'Manual only',
@@ -85,7 +102,7 @@ const _s = <String, Map<String, String>>{
     'analysis_done': 'Analysis done — check your notifications',
 
     // Login
-    'login_title':    'Sign in to AutoChecker',
+    'login_title':    'Sign in to GYM Tracker',
     'email':          'Email',
     'password':       'Password',
     'sign_in':        'Sign in',
@@ -147,6 +164,30 @@ const _s = <String, Map<String, String>>{
     'ai_gen_lang_en':        'English',
     'ai_gen_lang_uk':        'Ukrainian',
 
+    // Google Health
+    'section_health':            'GOOGLE HEALTH',
+    'health_connect':            'Connect Health',
+    'health_connect_sub':        'Sync steps, calories & heart rate',
+    'health_steps':              'Steps',
+    'health_calories':           'Calories',
+    'health_heart':              'Heart rate',
+    'health_bpm':                'bpm',
+    'health_kcal':               'kcal',
+    'health_today':              'Today',
+    'health_refresh':            'Refresh',
+    'health_not_available':      'Health Connect not installed',
+    'health_goal':               'Goal',
+
+    // Spotify
+    'section_spotify':           'SPOTIFY',
+    'spotify_connect':           'Connect Spotify',
+    'spotify_connect_sub':       'Control music and let AI see your track',
+    'spotify_connected':         'Spotify connected',
+    'spotify_nothing_playing':   'Nothing playing',
+    'spotify_disconnect':        'Disconnect Spotify',
+    'spotify_disconnect_title':  'Disconnect Spotify?',
+    'spotify_disconnect_body':   'Your Spotify account will be unlinked.',
+
     // Sessions
     'sessions':           'Sessions',
     'add_session':        'Log session',
@@ -166,6 +207,23 @@ const _s = <String, Map<String, String>>{
     'tab_supplements':  'Добавки',
     'tab_sessions':     'Тренування',
     'tab_settings':     'Налаштування',
+    'tab_calories':     'Калорії',
+
+    // Calorie analysis
+    'calorie_title':          'Аналіз їжі',
+    'calorie_empty':          'Сфотографуйте свою їжу',
+    'calorie_camera':         'Камера',
+    'calorie_gallery':        'Галерея',
+    'calorie_analyzing':      'Аналізую…',
+    'calorie_result_kcal':    'ккал',
+    'calorie_result_protein': 'Білки',
+    'calorie_result_carbs':   'Вуглеводи',
+    'calorie_result_fat':     'Жири',
+    'calorie_result_weight':  'порція',
+    'calorie_result_g':       'г',
+    'calorie_retry':          'Ще одне фото',
+    'calorie_scan_btn':       'Сканувати їжу',
+    'calorie_no_food':        'Їжу не розпізнано. Спробуйте чіткіше фото.',
 
     // Dashboard
     'fitness_profile':    'ФІТНЕС ПРОФІЛЬ',
@@ -185,7 +243,7 @@ const _s = <String, Map<String, String>>{
     // AI panel
     'helper_ai':          'Помічник AI',
     'ai_hint':            'Запитайте що завгодно…',
-    'ai_empty_sub':       'Запитайте про AutoChecker\nабо ваші фітнес-дані.',
+    'ai_empty_sub':       'Запитайте про GYM Tracker\nабо ваші фітнес-дані.',
     'ai_context_loaded':  'Я бачу ваші дані тренувань ✓',
 
     // Settings sections
@@ -194,6 +252,7 @@ const _s = <String, Map<String, String>>{
     'section_ai':         'AI АНАЛІЗ ТРЕНУВАНЬ',
     'section_account':    'АКАУНТ',
     'section_language':   'МОВА',
+    'section_spotify':    'SPOTIFY',
 
     // Settings items
     'pin_lock':           'PIN замок',
@@ -210,7 +269,7 @@ const _s = <String, Map<String, String>>{
     'upload_photo':       'Завантажити фото',
     'change_photo':       'Змінити фото',
     'remove':             'Видалити',
-    'version':            'AutoChecker Mobile v2.0',
+    'version':            'GYM Tracker v2.0',
 
     // Frequency options
     'freq_manual':   'Лише вручну',
@@ -237,7 +296,7 @@ const _s = <String, Map<String, String>>{
     'analysis_done': 'Аналіз готовий — перевірте сповіщення',
 
     // Login
-    'login_title':    'Увійти в AutoChecker',
+    'login_title':    'Увійти в GYM Tracker',
     'email':          'Електронна пошта',
     'password':       'Пароль',
     'sign_in':        'Увійти',
@@ -298,6 +357,29 @@ const _s = <String, Map<String, String>>{
     'ai_gen_lang':           'Мова програми',
     'ai_gen_lang_en':        'Англійська',
     'ai_gen_lang_uk':        'Українська',
+
+    // Google Health
+    'section_health':            'GOOGLE HEALTH',
+    'health_connect':            'Підключити Health',
+    'health_connect_sub':        'Синхронізація кроків, калорій і пульсу',
+    'health_steps':              'Кроки',
+    'health_calories':           'Калорії',
+    'health_heart':              'Пульс',
+    'health_bpm':                'уд/хв',
+    'health_kcal':               'ккал',
+    'health_today':              'Сьогодні',
+    'health_refresh':            'Оновити',
+    'health_not_available':      'Health Connect не встановлено',
+    'health_goal':               'Ціль',
+
+    // Spotify
+    'spotify_connect':           'Підключити Spotify',
+    'spotify_connect_sub':       'Керуйте музикою та дайте ШІ бачити трек',
+    'spotify_connected':         'Spotify підключено',
+    'spotify_nothing_playing':   'Нічого не грає',
+    'spotify_disconnect':        'Відключити Spotify',
+    'spotify_disconnect_title':  'Відключити Spotify?',
+    'spotify_disconnect_body':   'Ваш акаунт Spotify буде відвʼязано.',
 
     // Sessions
     'sessions':           'Тренування',

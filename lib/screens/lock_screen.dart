@@ -123,12 +123,10 @@ class _LockScreenState extends State<LockScreen>
                       ],
                     ),
                     alignment: Alignment.center,
-                    child: const Text(
-                      'AC',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800),
+                    child: const Icon(
+                      Icons.fitness_center_rounded,
+                      color: Colors.white,
+                      size: 28,
                     ),
                   ),
                   const SizedBox(height: 24),

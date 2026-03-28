@@ -158,13 +158,10 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                             ],
                           ),
-                          child: const Text(
-                            'AC',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                            ),
+                          child: const Icon(
+                            Icons.fitness_center_rounded,
+                            color: Colors.white,
+                            size: 32,
                           ),
                         ),
                       ),
@@ -365,7 +362,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                       const SizedBox(height: 16),
                       const Center(
                         child: Text(
-                          'Your account works on both the mobile app\nand the AutoChecker web app.',
+                          'Your account works on both the mobile app\nand the AutoChecker website.',
                           textAlign: TextAlign.center,
                           style: TextStyle(color: textMuted, fontSize: 11),
                         ),
