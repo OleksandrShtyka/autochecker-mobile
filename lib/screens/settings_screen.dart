@@ -11,6 +11,7 @@ import '../services/locale_service.dart';
 import '../services/lock_service.dart';
 import '../services/spotify_service.dart';
 import '../services/subscription_service.dart';
+import '../services/theme_service.dart';
 import '../theme.dart';
 import 'login_screen.dart';
 import 'payment_screen.dart';
@@ -472,6 +473,26 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ],
                 ),
               ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Appearance section
+          _sectionHeader('APPEARANCE'),
+          _glassSection(
+            child: ValueListenableBuilder(
+              valueListenable: ThemeService.instance.mode,
+              builder: (_, mode, __) => _switchTile(
+                title: 'Dark Mode',
+                subtitle: 'Switch between light and dark theme',
+                icon: mode == ThemeMode.dark
+                    ? Icons.dark_mode_rounded
+                    : Icons.light_mode_rounded,
+                iconColor: mode == ThemeMode.dark ? const Color(0xFF7C3AED) : const Color(0xFFF59E0B),
+                value: mode == ThemeMode.dark,
+                onChanged: (_) => ThemeService.instance.toggle(),
+              ),
             ),
           ),
 

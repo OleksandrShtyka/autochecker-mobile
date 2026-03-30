@@ -43,10 +43,21 @@ class LockService {
     }
   }
 
+  /// Returns true if the device has face recognition enrolled.
+  Future<bool> hasFaceBiometric() async {
+    try {
+      final types = await _auth.getAvailableBiometrics();
+      return types.contains(BiometricType.face) ||
+          types.contains(BiometricType.iris);
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<bool> authenticateWithBiometrics() async {
     try {
       return await _auth.authenticate(
-        localizedReason: 'Unlock GYM Tracker',
+        localizedReason: 'Scan your face to unlock GYM Tracker',
         options: const AuthenticationOptions(
           biometricOnly: true,
           stickyAuth: true,

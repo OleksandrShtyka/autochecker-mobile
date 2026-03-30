@@ -70,6 +70,12 @@ class ApiService {
     return res.data as Map<String, dynamic>;
   }
 
+  Future<Map<String, dynamic>> loginWithGoogle(String idToken) async {
+    final dio = await _client;
+    final res = await dio.post('/api/auth/google', data: {'idToken': idToken});
+    return res.data as Map<String, dynamic>;
+  }
+
   Future<void> verifyTotp(String code) async {
     final dio = await _client;
     await dio.post('/api/auth/totp/verify', data: {'code': code});

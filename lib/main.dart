@@ -6,6 +6,7 @@ import 'screens/splash_screen.dart';
 import 'services/ai_analysis_service.dart';
 import 'services/connectivity_service.dart';
 import 'services/locale_service.dart';
+import 'services/theme_service.dart';
 import 'theme.dart';
 
 void main() async {
@@ -15,6 +16,7 @@ void main() async {
   await Workmanager().initialize(workmanagerCallback, isInDebugMode: false);
   await initNotifications();
   await LocaleService.instance.init();
+  await ThemeService.instance.init();
   ConnectivityService.instance.startMonitoring();
 
   runApp(const GymTrackerApp());
@@ -27,11 +29,16 @@ class GymTrackerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<String>(
       valueListenable: LocaleService.instance.langCode,
-      builder: (_, __, ___) => MaterialApp(
-        title: 'GYM Tracker',
-        theme: appTheme,
-        debugShowCheckedModeBanner: false,
-        home: const SplashScreen(),
+      builder: (_, __, ___) => ValueListenableBuilder<ThemeMode>(
+        valueListenable: ThemeService.instance.mode,
+        builder: (_, themeMode, ___) => MaterialApp(
+          title: 'GYM Tracker',
+          theme: lightTheme,
+          darkTheme: darkTheme,
+          themeMode: themeMode,
+          debugShowCheckedModeBanner: false,
+          home: const SplashScreen(),
+        ),
       ),
     );
   }

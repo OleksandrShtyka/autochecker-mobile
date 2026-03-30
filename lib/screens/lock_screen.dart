@@ -19,6 +19,7 @@ class _LockScreenState extends State<LockScreen>
   String _entered = '';
   bool _error = false;
   bool _biometricAvailable = false;
+  bool _hasFace = false;
 
   late AnimationController _shakeCtrl;
   late Animation<double> _shakeAnim;
@@ -59,7 +60,13 @@ class _LockScreenState extends State<LockScreen>
   Future<void> _initBiometric() async {
     final enabled = await LockService.instance.biometricEnabled();
     final can = await LockService.instance.canUseBiometrics();
-    if (mounted) setState(() => _biometricAvailable = enabled && can);
+    final face = await LockService.instance.hasFaceBiometric();
+    if (mounted) {
+      setState(() {
+        _biometricAvailable = enabled && can;
+        _hasFace = face;
+      });
+    }
     if (_biometricAvailable) _tryBiometric();
   }
 
@@ -236,7 +243,10 @@ class _LockScreenState extends State<LockScreen>
                           children: [
                             if (_biometricAvailable)
                               _numBtn(
-                                child: _FaceIdIcon(ctrl: _faceIdCtrl),
+                                child: _hasFace
+                                    ? _FaceIdIcon(ctrl: _faceIdCtrl)
+                                    : const Icon(Icons.fingerprint,
+                                        color: teal, size: 26),
                                 onTap: _tryBiometric,
                               )
                             else
