@@ -322,4 +322,49 @@ class ApiService {
       throw Exception(msg ?? e.message ?? 'Network error');
     }
   }
+
+  // ── Computer Vision — Technique Analysis ─────────────────────────────────
+
+  Future<Map<String, dynamic>> analyzeTechnique(
+      Uint8List bytes, String mimeType, String exerciseName) async {
+    final dio = await _client;
+    try {
+      final res = await dio.post(
+        '/api/ai/analyze-technique',
+        data: {
+          'image': base64Encode(bytes),
+          'mimeType': mimeType,
+          'exercise': exerciseName,
+        },
+        options: Options(
+          validateStatus: (s) => s != null && s < 600,
+          receiveTimeout: const Duration(seconds: 40),
+        ),
+      );
+      final data = res.data as Map<String, dynamic>;
+      if (res.statusCode != 200) {
+        throw Exception(data['message'] as String? ?? 'Server error');
+      }
+      return data;
+    } on DioException catch (e) {
+      final msg = (e.response?.data as Map?)?.cast<String, dynamic>()?['message']
+          as String?;
+      throw Exception(msg ?? e.message ?? 'Network error');
+    }
+  }
+
+  // ── Spotify AI Playlist ────────────────────────────────────────────────────
+
+  Future<Map<String, dynamic>> aiSpotifyCommand(String prompt) async {
+    final dio = await _client;
+    final res = await dio.post(
+      '/api/ai/spotify-command',
+      data: {'prompt': prompt},
+      options: Options(
+        validateStatus: (s) => s != null && s < 600,
+        receiveTimeout: const Duration(seconds: 30),
+      ),
+    );
+    return res.data as Map<String, dynamic>;
+  }
 }

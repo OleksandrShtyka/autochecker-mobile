@@ -2,7 +2,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../models/models.dart';
+import '../services/achievements_service.dart';
 import '../services/api_service.dart';
+import '../services/exp_service.dart';
 import '../theme.dart';
 import '../widgets/glass_card.dart';
 
@@ -323,6 +325,12 @@ class SessionsScreenState extends State<SessionsScreen>
                             if (notesCtrl.text.trim().isNotEmpty)
                               'notes': notesCtrl.text.trim(),
                           });
+                          // EXP + achievements
+                          await ExpService.instance.earn(ExpReward.session);
+                          await AchievementsService.instance.onSessionLogged();
+                          final streak = ExpService.instance.streak.value;
+                          await AchievementsService.instance.onStreakUpdate(streak);
+                          await AchievementsService.instance.onLevelUp(ExpService.instance.level);
                           _load();
                         },
                         style: ElevatedButton.styleFrom(

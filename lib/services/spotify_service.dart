@@ -170,4 +170,69 @@ class SpotifyService {
   Future<void> pause() => _playerAction('PUT', 'pause');
   Future<void> next() => _playerAction('POST', 'next');
   Future<void> previous() => _playerAction('POST', 'previous');
+
+  // ── Search ─────────────────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> search(String query,
+      {String type = 'track', int limit = 10}) async {
+    try {
+      final token = await _getValidToken();
+      if (token == null) return [];
+      final res = await Dio().get(
+        'https://api.spotify.com/v1/search',
+        queryParameters: {'q': query, 'type': type, 'limit': limit},
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          validateStatus: (s) => s != null && s < 600,
+          receiveTimeout: const Duration(seconds: 10),
+        ),
+      );
+      if (res.statusCode != 200) return [];
+      final tracks = res.data['tracks']?['items'] as List? ?? [];
+      return tracks.cast<Map<String, dynamic>>();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  Future<bool> playUri(String uri) async {
+    try {
+      final token = await _getValidToken();
+      if (token == null) return false;
+      await Dio().put(
+        'https://api.spotify.com/v1/me/player/play',
+        data: {'uris': [uri]},
+        options: Options(
+          headers: {'Authorization': 'Bearer $token'},
+          validateStatus: (s) => s != null && s < 600,
+        ),
+      );
+      await Future.delayed(const Duration(milliseconds: 800));
+      await fetchCurrentTrack();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ── AI playlist command ────────────────────────────────────────────────────
+
+  /// Ask AI to generate search queries for a playlist, then queue them.
+  /// Returns list of tracks found.
+  Future<List<Map<String, dynamic>>> aiPlaylist(String prompt) async {
+    try {
+      final result = await ApiService.instance.aiSpotifyCommand(prompt);
+      final queries = (result['queries'] as List?)?.cast<String>() ?? [];
+      if (queries.isEmpty) return [];
+
+      final tracks = <Map<String, dynamic>>[];
+      for (final q in queries.take(8)) {
+        final found = await search(q, limit: 1);
+        if (found.isNotEmpty) tracks.add(found.first);
+      }
+      return tracks;
+    } catch (_) {
+      return [];
+    }
+  }
 }

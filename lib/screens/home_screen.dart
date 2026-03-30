@@ -5,9 +5,11 @@ import 'package:flutter/services.dart';
 
 import '../l10n/strings.dart';
 import '../models/models.dart';
+import '../services/achievements_service.dart';
 import '../services/api_service.dart';
 import '../services/bluetooth_service.dart' as bt_svc;
 import '../services/connectivity_service.dart';
+import '../services/exp_service.dart';
 import '../services/locale_service.dart';
 import '../services/spotify_service.dart';
 import '../services/update_service.dart';
@@ -17,10 +19,13 @@ import '../widgets/animated_background.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/premium_gate.dart';
 import '../widgets/voice_action_panel.dart';
+import 'achievements_screen.dart';
+import 'cv_workout_screen.dart';
 import 'food_calorie_screen.dart';
 import 'health_screen.dart';
 import 'profile_screen.dart';
 import 'sessions_screen.dart';
+import 'shop_screen.dart';
 import 'spotify_screen.dart';
 import 'supplements_screen.dart';
 import 'workout_program_screen.dart';
@@ -990,6 +995,32 @@ class _HomeScreenState extends State<HomeScreen>
             const SizedBox(height: 16),
           ],
 
+          // ── EXP level card ───────────────────────────────────────────────
+          AnimatedOpacity(
+            opacity: _entered ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 540),
+            child: AnimatedSlide(
+              offset: _entered ? Offset.zero : const Offset(0, 0.08),
+              duration: const Duration(milliseconds: 540),
+              curve: Curves.easeOutCubic,
+              child: _buildExpCard(c),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Quick actions row ─────────────────────────────────────────────
+          AnimatedOpacity(
+            opacity: _entered ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 560),
+            child: AnimatedSlide(
+              offset: _entered ? Offset.zero : const Offset(0, 0.08),
+              duration: const Duration(milliseconds: 560),
+              curve: Curves.easeOutCubic,
+              child: _buildQuickActions(c),
+            ),
+          ),
+          const SizedBox(height: 16),
+
           // ── Profile config card ──────────────────────────────────────────
           AnimatedOpacity(
             opacity: _entered ? 1.0 : 0.0,
@@ -1003,6 +1034,176 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ],
       ),
+    );
+  }
+
+  // ── EXP level card ────────────────────────────────────────────────────────
+  Widget _buildExpCard(AppColors c) {
+    return ValueListenableBuilder<int>(
+      valueListenable: ExpService.instance.exp,
+      builder: (_, exp, __) {
+        final level = ExpService.instance.level;
+        final progress = ExpService.instance.progress;
+        final streak = ExpService.instance.streak.value;
+        return GlassCard(
+          radius: 22,
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              // Level badge
+              GestureDetector(
+                onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ShopScreen())),
+                child: Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF00E5CC), Color(0xFF4361EE)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: teal.withValues(alpha: 0.35),
+                        blurRadius: 14,
+                        spreadRadius: -4,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('LVL', style: TextStyle(
+                          color: Colors.white, fontSize: 9,
+                          fontWeight: FontWeight.w700, letterSpacing: 0.5)),
+                      Text('$level', style: const TextStyle(
+                          color: Colors.white, fontSize: 18,
+                          fontWeight: FontWeight.w900)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(children: [
+                          Text('⚡ $exp EXP',
+                              style: TextStyle(
+                                  color: c.text, fontSize: 14,
+                                  fontWeight: FontWeight.w800)),
+                          if (streak > 1) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF59E0B)
+                                    .withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                    color: const Color(0xFFF59E0B)
+                                        .withValues(alpha: 0.4)),
+                              ),
+                              child: Text('🔥 $streak days',
+                                  style: const TextStyle(
+                                      color: Color(0xFFF59E0B),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700)),
+                            ),
+                          ],
+                        ]),
+                        Text('${ExpService.instance.expToNext} to next',
+                            style: TextStyle(color: c.muted, fontSize: 11)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 7,
+                        backgroundColor: c.isDark
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : Colors.black.withValues(alpha: 0.08),
+                        valueColor:
+                            const AlwaysStoppedAnimation<Color>(teal),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ── Quick action buttons ───────────────────────────────────────────────────
+  Widget _buildQuickActions(AppColors c) {
+    final actions = [
+      (
+        '🏆',
+        'Achievements',
+        const Color(0xFFF59E0B),
+        () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const AchievementsScreen())),
+      ),
+      (
+        '🛍️',
+        'Shop',
+        const Color(0xFF7C3AED),
+        () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const ShopScreen())),
+      ),
+      (
+        '📸',
+        'Form AI',
+        teal,
+        () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const CvWorkoutScreen())),
+      ),
+    ];
+
+    return Row(
+      children: actions.map((a) {
+        final (emoji, label, color, onTap) = a;
+        return Expanded(
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              margin: EdgeInsets.only(
+                  right: a == actions.last ? 0 : 10),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: c.isDark ? 0.12 : 0.08),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                    color: color.withValues(alpha: 0.25)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(emoji, style: const TextStyle(fontSize: 22)),
+                  const SizedBox(height: 5),
+                  Text(label,
+                      style: TextStyle(
+                          color: color,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700)),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 

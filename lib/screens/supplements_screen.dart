@@ -2,7 +2,9 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../models/models.dart';
+import '../services/achievements_service.dart';
 import '../services/api_service.dart';
+import '../services/exp_service.dart';
 import '../theme.dart';
 import '../widgets/glass_card.dart';
 
@@ -198,6 +200,8 @@ class SupplementsScreenState extends State<SupplementsScreen> {
                         if (existing == null) {
                           await ApiService.instance
                               .createSupplement(data);
+                          await ExpService.instance.earn(ExpReward.supplement);
+                          await AchievementsService.instance.onSupplementAdded();
                         } else {
                           await ApiService.instance
                               .updateSupplement(existing.id, data);
