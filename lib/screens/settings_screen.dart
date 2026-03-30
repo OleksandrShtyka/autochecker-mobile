@@ -502,7 +502,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   _switchTile(
                     title: t('biometric'),
                     subtitle: t('biometric_sub'),
-                    icon: Icons.fingerprint,
+                    icon: Icons.face_rounded,
                     value: _biometricEnabled,
                     onChanged: _toggleBiometric,
                   ),

@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
@@ -14,13 +15,14 @@ class LockScreen extends StatefulWidget {
 }
 
 class _LockScreenState extends State<LockScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   String _entered = '';
   bool _error = false;
   bool _biometricAvailable = false;
 
   late AnimationController _shakeCtrl;
   late Animation<double> _shakeAnim;
+  late AnimationController _faceIdCtrl;
 
   static const _pinLength = 4;
 
@@ -38,12 +40,19 @@ class _LockScreenState extends State<LockScreen>
       TweenSequenceItem(tween: Tween(begin: -8.0, end: 8.0), weight: 2),
       TweenSequenceItem(tween: Tween(begin: 8.0, end: 0.0), weight: 1),
     ]).animate(CurvedAnimation(parent: _shakeCtrl, curve: Curves.easeInOut));
+
+    _faceIdCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+
     _initBiometric();
   }
 
   @override
   void dispose() {
     _shakeCtrl.dispose();
+    _faceIdCtrl.dispose();
     super.dispose();
   }
 
@@ -55,8 +64,16 @@ class _LockScreenState extends State<LockScreen>
   }
 
   Future<void> _tryBiometric() async {
+    _faceIdCtrl.repeat();
     final ok = await LockService.instance.authenticateWithBiometrics();
-    if (ok && mounted) _unlock();
+    _faceIdCtrl.stop();
+    if (ok && mounted) {
+      await _faceIdCtrl.animateTo(1.0,
+          duration: const Duration(milliseconds: 300));
+      _unlock();
+    } else {
+      _faceIdCtrl.reset();
+    }
   }
 
   void _unlock() {
@@ -219,8 +236,7 @@ class _LockScreenState extends State<LockScreen>
                           children: [
                             if (_biometricAvailable)
                               _numBtn(
-                                child: const Icon(Icons.fingerprint,
-                                    color: teal, size: 26),
+                                child: _FaceIdIcon(ctrl: _faceIdCtrl),
                                 onTap: _tryBiometric,
                               )
                             else
@@ -297,4 +313,116 @@ class _LockScreenState extends State<LockScreen>
       ),
     );
   }
+}
+
+// ── Face ID Icon with scanner animation ───────────────────────────────────────
+
+class _FaceIdIcon extends StatelessWidget {
+  final AnimationController ctrl;
+  const _FaceIdIcon({required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: ctrl,
+      builder: (_, __) => CustomPaint(
+        size: const Size(30, 30),
+        painter: _FaceIdPainter(progress: ctrl.value),
+      ),
+    );
+  }
+}
+
+class _FaceIdPainter extends CustomPainter {
+  final double progress; // 0..1 repeating
+
+  const _FaceIdPainter({required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final r = w * 0.18; // corner radius
+    final armLen = w * 0.28; // bracket arm length
+    final strokeW = 2.2;
+
+    // Animate scan line: 0→1 sweep down, glow at position
+    final scanT = progress < 0.5 ? progress * 2 : (1.0 - (progress - 0.5) * 2);
+    final isScanning = progress > 0 && progress < 1.0;
+
+    // Corner bracket color: teal when scanning, white when idle
+    final bracketColor = isScanning
+        ? Color.lerp(Colors.white, teal, (sin(progress * pi * 4) * 0.5 + 0.5).clamp(0, 1))!
+        : teal;
+
+    final paint = Paint()
+      ..color = bracketColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeW
+      ..strokeCap = StrokeCap.round;
+
+    // Draw 4 corner brackets
+    _drawCorner(canvas, paint, Offset(0, 0), r, armLen, 1, 1);           // top-left
+    _drawCorner(canvas, paint, Offset(w, 0), r, armLen, -1, 1);          // top-right
+    _drawCorner(canvas, paint, Offset(0, h), r, armLen, 1, -1);          // bottom-left
+    _drawCorner(canvas, paint, Offset(w, h), r, armLen, -1, -1);         // bottom-right
+
+    // Scan line
+    if (isScanning) {
+      final scanY = h * scanT;
+      final scanPaint = Paint()
+        ..shader = LinearGradient(
+          colors: [
+            Colors.transparent,
+            teal.withValues(alpha: 0.9),
+            Colors.transparent,
+          ],
+          stops: const [0.0, 0.5, 1.0],
+        ).createShader(Rect.fromLTWH(0, scanY - 2, w, 4))
+        ..style = PaintingStyle.fill;
+
+      canvas.drawRect(Rect.fromLTWH(0, scanY - 1.5, w, 3), scanPaint);
+
+      // Glow dots (face dots) that light up as scan passes
+      final dotPositions = [
+        Offset(w * 0.35, h * 0.38), // left eye
+        Offset(w * 0.65, h * 0.38), // right eye
+        Offset(w * 0.50, h * 0.55), // nose
+        Offset(w * 0.38, h * 0.68), // mouth left
+        Offset(w * 0.62, h * 0.68), // mouth right
+      ];
+
+      for (final dot in dotPositions) {
+        final dotT = dot.dy / h;
+        if (scanT > dotT) {
+          final alpha = ((scanT - dotT) * 4).clamp(0.0, 1.0);
+          canvas.drawCircle(
+            dot,
+            1.2,
+            Paint()..color = teal.withValues(alpha: alpha * 0.85),
+          );
+        }
+      }
+    }
+  }
+
+  void _drawCorner(Canvas canvas, Paint paint, Offset corner, double r,
+      double armLen, double sx, double sy) {
+    final path = Path();
+    // Horizontal arm
+    path.moveTo(corner.dx + sx * armLen, corner.dy);
+    path.lineTo(corner.dx + sx * r, corner.dy);
+    // Arc
+    path.arcToPoint(
+      Offset(corner.dx, corner.dy + sy * r),
+      radius: Radius.circular(r),
+      clockwise: sx != sy,
+    );
+    // Vertical arm
+    path.lineTo(corner.dx, corner.dy + sy * armLen);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_FaceIdPainter old) => old.progress != progress;
 }
