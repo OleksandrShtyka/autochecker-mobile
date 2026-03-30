@@ -20,7 +20,7 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 14),
+      duration: const Duration(seconds: 16),
     )..repeat();
   }
 
@@ -54,8 +54,16 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: isDark
-                        ? const [Color(0xFF060B14), Color(0xFF0A1628), Color(0xFF060B14)]
-                        : const [Color(0xFFF5F7FF), Color(0xFFEFF4FF), Color(0xFFF2F5FF)],
+                        ? const [
+                            Color(0xFF08080F),
+                            Color(0xFF0C0C1A),
+                            Color(0xFF08080F),
+                          ]
+                        : const [
+                            Color(0xFFF7F7FF),
+                            Color(0xFFF0F0FF),
+                            Color(0xFFF7F7FF),
+                          ],
                     stops: const [0.0, 0.5, 1.0],
                   ),
                 ),
@@ -63,62 +71,65 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
 
               // Blob 1 — teal top-left
               _blob(
-                left: w * 0.0 + sin(t * 0.6) * 35,
-                top: h * 0.0 + cos(t * 0.45) * 45,
-                size: 300,
+                left: w * 0.0 + sin(t * 0.55) * 40,
+                top: h * 0.0 + cos(t * 0.42) * 50,
+                size: 320,
                 color: teal,
-                opacity: isDark ? 0.22 : 0.15,
+                opacity: isDark ? 0.28 : 0.14,
               ),
               // Blob 2 — blue bottom-right
               _blob(
-                right: w * 0.0 + sin(t * 0.35 + 2.0) * 40,
-                bottom: h * 0.08 + cos(t * 0.55 + 1.2) * 35,
-                size: 320,
+                right: w * 0.0 + sin(t * 0.32 + 2.0) * 45,
+                bottom: h * 0.06 + cos(t * 0.50 + 1.2) * 40,
+                size: 340,
                 color: blue,
-                opacity: isDark ? 0.18 : 0.12,
+                opacity: isDark ? 0.22 : 0.11,
               ),
-              // Blob 3 — purple center
+              // Blob 3 — purple center-left
               _blob(
-                left: w * 0.2 + sin(t * 0.28 + 4.1) * 55,
-                top: h * 0.38 + cos(t * 0.72 + 3.0) * 40,
-                size: 240,
-                color: const Color(0xFF7C3AED),
-                opacity: isDark ? 0.13 : 0.07,
+                left: w * 0.15 + sin(t * 0.25 + 4.1) * 60,
+                top: h * 0.35 + cos(t * 0.68 + 3.0) * 45,
+                size: 260,
+                color: accentPurple,
+                opacity: isDark ? 0.16 : 0.08,
               ),
               // Blob 4 — teal bottom-left
               _blob(
-                left: w * 0.0 + sin(t * 0.52 + 1.5) * 25,
-                bottom: h * 0.05 + cos(t * 0.38 + 2.7) * 30,
-                size: 200,
+                left: w * 0.0 + sin(t * 0.48 + 1.5) * 28,
+                bottom: h * 0.04 + cos(t * 0.35 + 2.7) * 35,
+                size: 220,
                 color: teal,
-                opacity: isDark ? 0.10 : 0.08,
+                opacity: isDark ? 0.12 : 0.09,
               ),
               // Blob 5 — rose top-right
               _blob(
-                right: w * 0.05 + sin(t * 0.44 + 3.5) * 30,
-                top: h * 0.10 + cos(t * 0.62 + 0.8) * 25,
-                size: 180,
+                right: w * 0.04 + sin(t * 0.40 + 3.5) * 32,
+                top: h * 0.08 + cos(t * 0.58 + 0.8) * 28,
+                size: 200,
                 color: const Color(0xFFE11D48),
-                opacity: isDark ? 0.07 : 0.05,
+                opacity: isDark ? 0.09 : 0.05,
+              ),
+              // Blob 6 — blue center-right
+              _blob(
+                right: w * 0.0 + sin(t * 0.62 + 5.2) * 35,
+                top: h * 0.42 + cos(t * 0.44 + 1.9) * 55,
+                size: 190,
+                color: blue,
+                opacity: isDark ? 0.10 : 0.06,
               ),
 
-              // Subtle grain overlay (dark only)
+              // Subtle gradient vignette (dark only)
               if (isDark)
                 Positioned.fill(
-                  child: ClipRect(
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 0, sigmaY: 0),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withValues(alpha: 0.08),
-                            ],
-                          ),
-                        ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        center: Alignment.center,
+                        radius: 1.2,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.15),
+                        ],
                       ),
                     ),
                   ),
@@ -152,10 +163,10 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
           gradient: RadialGradient(
             colors: [
               color.withValues(alpha: opacity),
-              color.withValues(alpha: opacity * 0.5),
+              color.withValues(alpha: opacity * 0.45),
               color.withValues(alpha: 0),
             ],
-            stops: const [0.0, 0.5, 1.0],
+            stops: const [0.0, 0.45, 1.0],
           ),
         ),
       ),

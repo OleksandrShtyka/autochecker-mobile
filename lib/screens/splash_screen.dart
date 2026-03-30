@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 
@@ -22,52 +23,12 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _ctrl;
   final AudioPlayer _audio = AudioPlayer();
 
-  // Bar: scales in horizontally
-  late Animation<double> _barScale;
-  // Plates: slide in from both sides
-  late Animation<double> _plateSlide;
-  // Collars snap in
-  late Animation<double> _collarScale;
-  // Lift upward
-  late Animation<double> _liftY;
-  // Title + tagline fade
-  late Animation<double> _titleFade;
-  // Exit fade out
-  late Animation<double> _exitFade;
-
   @override
   void initState() {
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2800),
-    );
-
-    _barScale = CurvedAnimation(
-      parent: _ctrl,
-      curve: const Interval(0.0, 0.18, curve: Curves.easeOutBack),
-    );
-    _plateSlide = CurvedAnimation(
-      parent: _ctrl,
-      curve: const Interval(0.15, 0.55, curve: Curves.easeOutCubic),
-    );
-    _collarScale = CurvedAnimation(
-      parent: _ctrl,
-      curve: const Interval(0.50, 0.62, curve: Curves.elasticOut),
-    );
-    _liftY = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: _ctrl,
-        curve: const Interval(0.60, 0.82, curve: Curves.easeInOut),
-      ),
-    );
-    _titleFade = CurvedAnimation(
-      parent: _ctrl,
-      curve: const Interval(0.70, 0.88, curve: Curves.easeOut),
-    );
-    _exitFade = CurvedAnimation(
-      parent: _ctrl,
-      curve: const Interval(0.93, 1.0, curve: Curves.easeIn),
+      duration: const Duration(milliseconds: 2600),
     );
 
     _ctrl.forward();
@@ -95,7 +56,6 @@ class _SplashScreenState extends State<SplashScreen>
     final hasSession = await ApiService.instance.checkSession();
     final hasPin = hasSession && await LockService.instance.hasPin();
     if (hasSession) {
-      // Load subscription status in background — don't block navigation
       SubscriptionService.instance.refresh();
     }
     if (!mounted) return;
@@ -120,17 +80,31 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: const Color(0xFF08080F),
       body: AnimatedBuilder(
         animation: _ctrl,
         builder: (_, __) {
-          // Lift: goes up 72px then returns to 0
-          final lv = _liftY.value;
-          final liftOffset = lv < 0.5
-              ? -(lv * 2) * 72  // going up
-              : -(1 - (lv - 0.5) * 2) * 72; // coming back down
+          final v = _ctrl.value;
 
-          final exitOpacity = (1 - _exitFade.value).clamp(0.0, 1.0);
+          // Stage timing:
+          // 0–30%: dots appear (staggered)
+          // 30–60%: dots collapse, logo appears
+          // 60–85%: text fades in
+          // 85–100%: fade out
+
+          final exitOpacity = v >= 0.85
+              ? (1.0 - ((v - 0.85) / 0.15)).clamp(0.0, 1.0)
+              : 1.0;
+
+          // Logo scale — spring in during 30–60%
+          final logoT = ((v - 0.30) / 0.30).clamp(0.0, 1.0);
+          const logoSpring = ElasticOutCurve(0.6);
+          final logoScale = logoT > 0 ? logoSpring.transform(logoT) : 0.0;
+          final logoOpacity = (logoT * 3).clamp(0.0, 1.0);
+
+          // Text fade — 60–85%
+          final textT = ((v - 0.60) / 0.25).clamp(0.0, 1.0);
+          final textOpacity = Curves.easeOut.transform(textT);
 
           return Stack(
             fit: StackFit.expand,
@@ -141,17 +115,22 @@ class _SplashScreenState extends State<SplashScreen>
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [Color(0xFF060F1A), Color(0xFF0D1B2A), Color(0xFF060F1A)],
+                    colors: [
+                      Color(0xFF08080F),
+                      Color(0xFF0C0C1E),
+                      Color(0xFF08080F),
+                    ],
                   ),
                 ),
               ),
+
               // Subtle glow blobs
               Positioned(
-                top: -100,
+                top: -120,
                 left: -80,
                 child: Container(
-                  width: 300,
-                  height: 300,
+                  width: 320,
+                  height: 320,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: teal.withValues(alpha: 0.06),
@@ -162,8 +141,8 @@ class _SplashScreenState extends State<SplashScreen>
                 bottom: -80,
                 right: -60,
                 child: Container(
-                  width: 250,
-                  height: 250,
+                  width: 260,
+                  height: 260,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: blue.withValues(alpha: 0.05),
@@ -178,28 +157,67 @@ class _SplashScreenState extends State<SplashScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Barbell
-                      Transform.translate(
-                        offset: Offset(0, liftOffset),
-                        child: _buildBarbell(),
-                      ),
-                      const SizedBox(height: 52),
-                      // Title
-                      FadeTransition(
-                        opacity: _titleFade,
+                      // Dots ring (0–30%) + collapsing (30–60%)
+                      _DotsRing(animValue: v),
+
+                      const SizedBox(height: 0),
+
+                      // Logo — appears at 30–60%
+                      if (logoT > 0)
+                        Opacity(
+                          opacity: logoOpacity.clamp(0.0, 1.0),
+                          child: Transform.scale(
+                            scale: logoScale.clamp(0.0, 1.3),
+                            child: Container(
+                              width: 88,
+                              height: 88,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF00E5CC),
+                                    Color(0xFF4361EE),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(28),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: teal.withValues(alpha: 0.50),
+                                    blurRadius: 40,
+                                    spreadRadius: -4,
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.fitness_center_rounded,
+                                color: Colors.white,
+                                size: 42,
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        const SizedBox(height: 88),
+
+                      const SizedBox(height: 40),
+
+                      // Text — fades in at 60–85%
+                      Opacity(
+                        opacity: textOpacity,
                         child: Column(
                           children: [
                             ShaderMask(
                               shaderCallback: (b) => const LinearGradient(
-                                colors: [Color(0xFF0A7B72), teal, blue],
+                                colors: [Color(0xFF00E5CC), Color(0xFF4361EE)],
                               ).createShader(b),
-                              child: const Text(
+                              child: Text(
                                 'GYM TRACKER',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 32,
+                                  fontSize: 30,
                                   fontWeight: FontWeight.w900,
-                                  letterSpacing: 4,
+                                  letterSpacing: 4.0 + (1.0 - textOpacity) * 8,
                                 ),
                               ),
                             ),
@@ -225,144 +243,69 @@ class _SplashScreenState extends State<SplashScreen>
       ),
     );
   }
-
-  Widget _buildBarbell() {
-    return SizedBox(
-      width: 280,
-      height: 80,
-      child: CustomPaint(
-        painter: _BarbellPainter(
-          barScale: _barScale.value,
-          plateSlide: _plateSlide.value,
-          collarScale: _collarScale.value,
-        ),
-      ),
-    );
-  }
 }
 
-// ── Barbell CustomPainter ─────────────────────────────────────────────────────
+// ── Dots Ring — 8 staggered dots that appear then collapse ────────────────────
+class _DotsRing extends StatelessWidget {
+  final double animValue;
 
-class _BarbellPainter extends CustomPainter {
-  final double barScale;
-  final double plateSlide;
-  final double collarScale;
-
-  _BarbellPainter({
-    required this.barScale,
-    required this.plateSlide,
-    required this.collarScale,
-  });
-
-  static const _barColor = Color(0xFFCBD5E1);   // silver bar
-  static const _plate1Color = Color(0xFF0D9488); // teal large plate
-  static const _plate2Color = Color(0xFF1B5BA0); // blue medium plate
-  static const _plate3Color = Color(0xFF475569); // gray small plate
-  static const _collarColor = Color(0xFF94A3B8);  // silver collar
+  const _DotsRing({required this.animValue});
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final cx = size.width / 2;
-    final cy = size.height / 2;
+  Widget build(BuildContext context) {
+    const dotCount = 8;
+    const ringRadius = 36.0;
+    const dotSize = 6.0;
 
-    // ── Dimensions ──────────────────────────────────────────────────────────
-    const barH = 12.0;
-    final barHalfW = 130.0 * barScale;
+    // Dots phase: 0–30% appear, 30–60% collapse to center
+    final dotsAppearT = (animValue / 0.30).clamp(0.0, 1.0);
+    final dotsCollapseT = ((animValue - 0.30) / 0.30).clamp(0.0, 1.0);
+    final currentRadius = ringRadius * (1.0 - dotsCollapseT);
+    final dotsOpacity = (1.0 - dotsCollapseT).clamp(0.0, 1.0);
 
-    // Plate distances from center of bar (left side, negative = left)
-    const p1W = 18.0; // large plate width
-    const p1H = 62.0;
-    const p2W = 13.0;
-    const p2H = 50.0;
-    const p3W = 9.0;
-    const p3H = 38.0;
-    const colW = 10.0;
-    const colH = 28.0;
-    const gap = 2.0;
+    return SizedBox(
+      width: (ringRadius + dotSize) * 2 + 4,
+      height: (ringRadius + dotSize) * 2 + 4,
+      child: Stack(
+        alignment: Alignment.center,
+        children: List.generate(dotCount, (i) {
+          final angle = (2 * pi / dotCount) * i - pi / 2;
+          // Stagger: each dot appears with a delay proportional to its index
+          final staggerDelay = i / dotCount * 0.6;
+          final dotT = ((dotsAppearT - staggerDelay) / (1.0 - staggerDelay))
+              .clamp(0.0, 1.0);
+          final dotOpacity = (dotT * dotsOpacity).clamp(0.0, 1.0);
 
-    // Plate x-positions (distance from bar center, positive = outward)
-    // They start at the bar center and slide to their final positions
-    final p3Start = barHalfW - 20; // near bar end
-    final p3End = barHalfW - p3W / 2 - gap;
-    final p2End = p3End - p3W / 2 - gap - p2W / 2;
-    final p1End = p2End - p2W / 2 - gap - p1W / 2;
-    final colEnd = p1End - p1W / 2 - gap - colW / 2;
+          final x = cos(angle) * currentRadius;
+          final y = sin(angle) * currentRadius;
 
-    double lerp(double a, double b, double t) => a + (b - a) * t;
-    final p1X = lerp(p3Start, p1End, plateSlide);
-    final p2X = lerp(p3Start, p2End, plateSlide);
-    final p3X = lerp(p3Start, p3End, plateSlide);
-    final colX = lerp(p3Start, colEnd, plateSlide) * collarScale;
+          // Color gradient around the ring
+          final hue = (i / dotCount) * 60 + 168; // teal to blue range
+          final color = HSLColor.fromAHSL(1.0, hue, 0.9, 0.55).toColor();
 
-    // ── Paint helpers ────────────────────────────────────────────────────────
-    final barPaint = Paint()
-      ..color = _barColor
-      ..style = PaintingStyle.fill;
-
-    void drawPlate(double xOff, double w, double h, Color color) {
-      final paint = Paint()..color = color;
-      final rect = Rect.fromCenter(
-          center: Offset(cx + xOff, cy), width: w, height: h);
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(rect, const Radius.circular(3)),
-        paint,
-      );
-      // Highlight
-      final hl = Paint()
-        ..color = Colors.white.withValues(alpha: 0.15)
-        ..style = PaintingStyle.fill;
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(rect.left + 2, rect.top + 2, w - 4, 4),
-          const Radius.circular(2),
-        ),
-        hl,
-      );
-    }
-
-    // Draw left plates (mirrored)
-    drawPlate(-p1X, p1W, p1H, _plate1Color);
-    drawPlate(-p2X, p2W, p2H, _plate2Color);
-    drawPlate(-p3X, p3W, p3H, _plate3Color);
-    // Draw right plates
-    drawPlate(p3X, p3W, p3H, _plate3Color);
-    drawPlate(p2X, p2W, p2H, _plate2Color);
-    drawPlate(p1X, p1W, p1H, _plate1Color);
-
-    // ── Bar ──────────────────────────────────────────────────────────────────
-    final barRect = Rect.fromCenter(
-        center: Offset(cx, cy), width: barHalfW * 2, height: barH);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(barRect, const Radius.circular(6)),
-      barPaint,
-    );
-    // Bar highlight
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(barRect.left + 8, barRect.top + 2, barRect.width - 16, 3),
-        const Radius.circular(2),
+          return Transform.translate(
+            offset: Offset(x, y),
+            child: Opacity(
+              opacity: dotOpacity,
+              child: Container(
+                width: dotSize,
+                height: dotSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: color,
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.8),
+                      blurRadius: 6,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }),
       ),
-      Paint()..color = Colors.white.withValues(alpha: 0.3),
     );
-
-    // ── Collars ───────────────────────────────────────────────────────────────
-    if (collarScale > 0) {
-      final colPaint = Paint()..color = _collarColor;
-      for (final side in [-1.0, 1.0]) {
-        final cx2 = cx + side * colX;
-        final rect = Rect.fromCenter(
-            center: Offset(cx2, cy), width: colW, height: colH);
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(rect, const Radius.circular(2)),
-          colPaint,
-        );
-      }
-    }
   }
-
-  @override
-  bool shouldRepaint(_BarbellPainter old) =>
-      old.barScale != barScale ||
-      old.plateSlide != plateSlide ||
-      old.collarScale != collarScale;
 }

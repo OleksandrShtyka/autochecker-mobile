@@ -1,21 +1,29 @@
 import 'package:flutter/material.dart';
 
-const teal = Color(0xFF2EC8BE);
-const blue = Color(0xFF2563EB);
+// ── Accent colors ─────────────────────────────────────────────────────────────
+const teal = Color(0xFF00E5CC);
+const blue = Color(0xFF4361EE);
+const accentPurple = Color(0xFF7B2FBE);
+
+const accentGradient = LinearGradient(
+  colors: [Color(0xFF00E5CC), Color(0xFF4361EE)],
+  begin: Alignment.centerLeft,
+  end: Alignment.centerRight,
+);
 
 // ── Dark palette ──────────────────────────────────────────────────────────────
-const _dBg      = Color(0xFF060B14);
-const _dSurface = Color(0xFF0C1525);
-const _dBorder  = Color(0xFF1C2D45);
-const _dText    = Color(0xFFE6EDF3);
-const _dMuted   = Color(0xFF8B949E);
+const _dBg      = Color(0xFF08080F);
+const _dSurface = Color(0xFF13131F);
+const _dBorder  = Color(0xFF1F1F32);
+const _dText    = Color(0xFFF0F0FF);
+const _dMuted   = Color(0xFF6B6B8A);
 
-// ── Light palette (iOS) ───────────────────────────────────────────────────────
-const _lBg      = Color(0xFFF2F2F7);
+// ── Light palette ─────────────────────────────────────────────────────────────
+const _lBg      = Color(0xFFF7F7FF);
 const _lSurface = Color(0xFFFFFFFF);
-const _lBorder  = Color(0xFFE5E5EA);
-const _lText    = Color(0xFF1C1C1E);
-const _lMuted   = Color(0xFF8E8E93);
+const _lBorder  = Color(0xFFE4E4F0);
+const _lText    = Color(0xFF0D0D1A);
+const _lMuted   = Color(0xFF8888AA);
 
 // ── Backwards-compat exports (dark) ──────────────────────────────────────────
 const Color textPrimary  = _dText;
@@ -49,7 +57,7 @@ class AppColors {
 
   Color get cardFill => isDark
       ? Colors.white.withValues(alpha: 0.07)
-      : Colors.white.withValues(alpha: 0.85);
+      : Colors.white.withValues(alpha: 0.90);
 
   Color get cardBorder => isDark
       ? Colors.white.withValues(alpha: 0.10)
@@ -62,6 +70,38 @@ class AppColors {
   Color get divider => isDark
       ? Colors.white.withValues(alpha: 0.08)
       : Colors.black.withValues(alpha: 0.08);
+
+  BoxDecoration get cardDecoration => BoxDecoration(
+    color: cardFill,
+    gradient: isDark
+        ? LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white.withValues(alpha: 0.10),
+              Colors.white.withValues(alpha: 0.03),
+            ],
+          )
+        : null,
+    borderRadius: BorderRadius.circular(28),
+    border: Border.all(color: cardBorder, width: 1),
+    boxShadow: isDark
+        ? [
+            BoxShadow(
+              color: teal.withValues(alpha: 0.08),
+              blurRadius: 40,
+              spreadRadius: -8,
+            ),
+          ]
+        : [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 24,
+              spreadRadius: -4,
+              offset: const Offset(0, 6),
+            ),
+          ],
+  );
 
   static const _darkColors = AppColors(
     bg: _dBg, surface: _dSurface, border: _dBorder,
@@ -90,12 +130,12 @@ final darkTheme = ThemeData(
     centerTitle: false,
     titleTextStyle: TextStyle(
       color: _dText, fontSize: 18,
-      fontWeight: FontWeight.w700, letterSpacing: -0.5,
+      fontWeight: FontWeight.w800, letterSpacing: -1.0,
     ),
   ),
   cardTheme: CardThemeData(
     color: Colors.transparent, elevation: 0,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
     margin: EdgeInsets.zero,
   ),
   inputDecorationTheme: InputDecorationTheme(
@@ -104,18 +144,18 @@ final darkTheme = ThemeData(
     labelStyle: const TextStyle(color: _dMuted, fontSize: 13),
     hintStyle: const TextStyle(color: _dMuted),
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
     ),
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.12)),
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       borderSide: const BorderSide(color: teal, width: 1.5),
     ),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
@@ -152,7 +192,7 @@ final darkTheme = ThemeData(
   ),
 );
 
-// ── Light Theme (iOS) ─────────────────────────────────────────────────────────
+// ── Light Theme ───────────────────────────────────────────────────────────────
 final lightTheme = ThemeData(
   brightness: Brightness.light,
   scaffoldBackgroundColor: _lBg,
@@ -169,12 +209,12 @@ final lightTheme = ThemeData(
     centerTitle: false,
     titleTextStyle: TextStyle(
       color: _lText, fontSize: 18,
-      fontWeight: FontWeight.w700, letterSpacing: -0.5,
+      fontWeight: FontWeight.w800, letterSpacing: -1.0,
     ),
   ),
   cardTheme: CardThemeData(
     color: _lSurface, elevation: 0,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
     margin: EdgeInsets.zero,
     shadowColor: Colors.black.withValues(alpha: 0.06),
   ),
@@ -184,18 +224,18 @@ final lightTheme = ThemeData(
     labelStyle: const TextStyle(color: _lMuted, fontSize: 13),
     hintStyle: const TextStyle(color: _lMuted),
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.12)),
     ),
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.10)),
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(16),
       borderSide: const BorderSide(color: teal, width: 1.5),
     ),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
   ),
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
@@ -240,10 +280,10 @@ BoxDecoration get cardDecoration => BoxDecoration(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Colors.white.withValues(alpha: 0.09),
+      Colors.white.withValues(alpha: 0.10),
       Colors.white.withValues(alpha: 0.03),
     ],
   ),
-  borderRadius: BorderRadius.circular(20),
+  borderRadius: BorderRadius.circular(28),
   border: Border.all(color: Colors.white.withValues(alpha: 0.11)),
 );

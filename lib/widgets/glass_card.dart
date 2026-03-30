@@ -1,8 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme.dart';
 
+// ── GlassCard — theme-aware glass/card widget ─────────────────────────────────
 class GlassCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -14,9 +16,9 @@ class GlassCard extends StatelessWidget {
     super.key,
     required this.child,
     this.padding,
-    this.radius = 24,
+    this.radius = 28,
     this.glowColor,
-    this.blur = 20,
+    this.blur = 24,
   });
 
   @override
@@ -26,27 +28,32 @@ class GlassCard extends StatelessWidget {
     Widget inner = Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: c.cardFill,
+        color: c.isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white,
         gradient: c.isDark
             ? LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.white.withValues(alpha: 0.10),
-                  Colors.white.withValues(alpha: 0.03),
+                  Colors.white.withValues(alpha: 0.11),
+                  Colors.white.withValues(alpha: 0.04),
                 ],
               )
             : null,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: c.cardBorder, width: 1),
+        border: Border.all(
+          color: c.isDark
+              ? Colors.white.withValues(alpha: 0.10)
+              : c.border,
+          width: 1,
+        ),
         boxShadow: c.isDark
             ? null
             : [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.07),
-                  blurRadius: 24,
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 28,
                   spreadRadius: -4,
-                  offset: const Offset(0, 6),
+                  offset: const Offset(0, 8),
                 ),
               ],
       ),
@@ -69,9 +76,9 @@ class GlassCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(radius),
           boxShadow: [
             BoxShadow(
-              color: glowColor!.withValues(alpha: c.isDark ? 0.20 : 0.12),
-              blurRadius: 36,
-              spreadRadius: -6,
+              color: glowColor!.withValues(alpha: c.isDark ? 0.22 : 0.10),
+              blurRadius: 42,
+              spreadRadius: -8,
             ),
           ],
         ),
@@ -82,20 +89,17 @@ class GlassCard extends StatelessWidget {
   }
 }
 
-// ── Spring Button — scales on press ──────────────────────────────────────────
-
+// ── SpringButton — scale on press with spring return ─────────────────────────
 class SpringButton extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;
-  final double scale;
-  final Duration duration;
+  final double pressedScale;
 
   const SpringButton({
     super.key,
     required this.child,
     this.onTap,
-    this.scale = 0.94,
-    this.duration = const Duration(milliseconds: 130),
+    this.pressedScale = 0.93,
   });
 
   @override
@@ -112,9 +116,9 @@ class _SpringButtonState extends State<SpringButton>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: widget.duration,
+      duration: const Duration(milliseconds: 120),
     );
-    _scaleAnim = Tween<double>(begin: 1.0, end: widget.scale).animate(
+    _scaleAnim = Tween<double>(begin: 1.0, end: widget.pressedScale).animate(
       CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
     );
   }
@@ -125,12 +129,23 @@ class _SpringButtonState extends State<SpringButton>
     super.dispose();
   }
 
-  void _onTapDown(_) => _ctrl.forward();
-  void _onTapUp(_) {
-    _ctrl.reverse();
+  void _onTapDown(TapDownDetails _) {
+    HapticFeedback.lightImpact();
+    _ctrl.forward();
+  }
+
+  void _onTapUp(TapUpDetails _) {
+    _ctrl.animateBack(0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutBack);
     widget.onTap?.call();
   }
-  void _onTapCancel() => _ctrl.reverse();
+
+  void _onTapCancel() {
+    _ctrl.animateBack(0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutBack);
+  }
 
   @override
   Widget build(BuildContext context) {

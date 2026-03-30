@@ -1,11 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:dio/dio.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../services/api_service.dart';
 import '../theme.dart';
 import '../widgets/animated_background.dart';
+import '../widgets/glass_card.dart';
 import 'home_screen.dart';
 import 'register_screen.dart';
 import 'totp_screen.dart';
@@ -27,25 +29,29 @@ class _LoginScreenState extends State<LoginScreen>
   bool _obscure = true;
 
   late AnimationController _entranceCtrl;
-  late Animation<double> _fadeAnim;
-  late Animation<Offset> _slideAnim;
+  late Animation<Offset> _cardSlide;
+  late Animation<double> _logoFade;
 
-  final _googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile'],
-  );
+  final _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
 
   @override
   void initState() {
     super.initState();
     _entranceCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 750),
     );
-    _fadeAnim = CurvedAnimation(parent: _entranceCtrl, curve: Curves.easeOut);
-    _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.05),
+    _cardSlide = Tween<Offset>(
+      begin: const Offset(0, 1.0),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _entranceCtrl, curve: Curves.easeOutCubic));
+    ).animate(CurvedAnimation(
+      parent: _entranceCtrl,
+      curve: const Interval(0.0, 1.0, curve: Curves.easeOutBack),
+    ));
+    _logoFade = CurvedAnimation(
+      parent: _entranceCtrl,
+      curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
+    );
     Future.microtask(() => _entranceCtrl.forward());
   }
 
@@ -64,18 +70,18 @@ class _LoginScreenState extends State<LoginScreen>
       setState(() => _error = 'Please fill in both fields.');
       return;
     }
-    setState(() { _loading = true; _error = null; });
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final result = await ApiService.instance.login(email, pass);
       if (!mounted) return;
       if (result['mfa_required'] == true) {
-        Navigator.of(context).pushReplacement(
-          _iosRoute((_) => const TotpScreen()),
-        );
+        Navigator.of(context).pushReplacement(_slideRoute((_) => const TotpScreen()));
       } else {
-        Navigator.of(context).pushReplacement(
-          _iosRoute((_) => const HomeScreen()),
-        );
+        Navigator.of(context).pushReplacement(_slideRoute((_) => const HomeScreen()));
       }
     } catch (e) {
       setState(() => _error = _parseError(e));
@@ -85,7 +91,11 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Future<void> _loginWithGoogle() async {
-    setState(() { _googleLoading = true; _error = null; });
+    HapticFeedback.lightImpact();
+    setState(() {
+      _googleLoading = true;
+      _error = null;
+    });
     try {
       final account = await _googleSignIn.signIn();
       if (account == null) {
@@ -99,9 +109,9 @@ class _LoginScreenState extends State<LoginScreen>
       final result = await ApiService.instance.loginWithGoogle(idToken);
       if (!mounted) return;
       if (result['mfa_required'] == true) {
-        Navigator.of(context).pushReplacement(_iosRoute((_) => const TotpScreen()));
+        Navigator.of(context).pushReplacement(_slideRoute((_) => const TotpScreen()));
       } else {
-        Navigator.of(context).pushReplacement(_iosRoute((_) => const HomeScreen()));
+        Navigator.of(context).pushReplacement(_slideRoute((_) => const HomeScreen()));
       }
     } catch (e) {
       setState(() => _error = _parseError(e));
@@ -120,7 +130,7 @@ class _LoginScreenState extends State<LoginScreen>
     return e.toString();
   }
 
-  PageRoute _iosRoute(WidgetBuilder builder) => PageRouteBuilder(
+  PageRoute _slideRoute(WidgetBuilder builder) => PageRouteBuilder(
     pageBuilder: (ctx, __, ___) => builder(ctx),
     transitionsBuilder: (_, anim, __, child) => SlideTransition(
       position: Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
@@ -139,269 +149,328 @@ class _LoginScreenState extends State<LoginScreen>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          if (c.isDark) const AnimatedBackground(),
-          if (!c.isDark)
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    teal.withValues(alpha: 0.07),
-                    blue.withValues(alpha: 0.04),
-                    c.bg,
-                  ],
-                ),
-              ),
-            ),
+          // Animated background
+          const AnimatedBackground(),
+
           SafeArea(
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
-                child: FadeTransition(
-                  opacity: _fadeAnim,
-                  child: SlideTransition(
-                    position: _slideAnim,
+            child: Column(
+              children: [
+                // TOP SECTION — logo area (40%)
+                Expanded(
+                  flex: 4,
+                  child: FadeTransition(
+                    opacity: _logoFade,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Logo
-                        Center(
-                          child: Container(
-                            width: 72, height: 72,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [Color(0xFF0A7B72), teal, blue],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
+                        const SizedBox(height: 48),
+                        // Logo icon
+                        Container(
+                          width: 80,
+                          height: 80,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF00E5CC), Color(0xFF4361EE)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(28),
+                            boxShadow: [
+                              BoxShadow(
+                                color: teal.withValues(alpha: 0.45),
+                                blurRadius: 36,
+                                spreadRadius: -4,
+                                offset: const Offset(0, 8),
                               ),
-                              borderRadius: BorderRadius.circular(22),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: teal.withValues(alpha: 0.4),
-                                  blurRadius: 28, spreadRadius: -4,
-                                ),
-                              ],
-                            ),
-                            child: const Icon(Icons.fitness_center_rounded,
-                                color: Colors.white, size: 36),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.fitness_center_rounded,
+                            color: Colors.white,
+                            size: 38,
                           ),
                         ),
-                        const SizedBox(height: 22),
-                        Center(
-                          child: Text('GYM Tracker',
-                            style: TextStyle(
-                              color: c.text, fontSize: 28,
-                              fontWeight: FontWeight.w800, letterSpacing: -0.8,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Center(
-                          child: Text('Your personal fitness companion',
-                            style: TextStyle(color: c.muted, fontSize: 14),
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Google Sign-In button
-                        _GoogleButton(
-                          loading: _googleLoading,
-                          onTap: _loginWithGoogle,
-                          c: c,
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Divider
-                        Row(
-                          children: [
-                            Expanded(child: Divider(color: c.border, thickness: 1)),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 14),
-                              child: Text('or', style: TextStyle(color: c.muted, fontSize: 13)),
-                            ),
-                            Expanded(child: Divider(color: c.border, thickness: 1)),
-                          ],
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Email/password card
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(20),
-                          child: BackdropFilter(
-                            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                            child: Container(
-                              padding: const EdgeInsets.all(22),
-                              decoration: BoxDecoration(
-                                color: c.cardFill,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: c.cardBorder),
-                                boxShadow: c.isDark ? null : [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.06),
-                                    blurRadius: 20,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  // Email
-                                  TextField(
-                                    controller: _emailCtrl,
-                                    keyboardType: TextInputType.emailAddress,
-                                    autocorrect: false,
-                                    style: TextStyle(color: c.text),
-                                    decoration: InputDecoration(
-                                      labelText: 'Email',
-                                      labelStyle: TextStyle(color: c.muted, fontSize: 13),
-                                      prefixIcon: Icon(Icons.email_outlined,
-                                          color: c.muted, size: 18),
-                                      filled: true,
-                                      fillColor: c.inputFill,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                        borderSide: BorderSide(color: c.border),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                        borderSide: BorderSide(color: c.border),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                        borderSide: const BorderSide(color: teal, width: 1.5),
-                                      ),
-                                    ),
-                                    onSubmitted: (_) => _login(),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  // Password
-                                  TextField(
-                                    controller: _passCtrl,
-                                    obscureText: _obscure,
-                                    style: TextStyle(color: c.text),
-                                    decoration: InputDecoration(
-                                      labelText: 'Password',
-                                      labelStyle: TextStyle(color: c.muted, fontSize: 13),
-                                      prefixIcon: Icon(Icons.lock_outline_rounded,
-                                          color: c.muted, size: 18),
-                                      suffixIcon: IconButton(
-                                        icon: Icon(
-                                          _obscure
-                                              ? Icons.visibility_off_outlined
-                                              : Icons.visibility_outlined,
-                                          color: c.muted, size: 20,
-                                        ),
-                                        onPressed: () => setState(() => _obscure = !_obscure),
-                                      ),
-                                      filled: true,
-                                      fillColor: c.inputFill,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                        borderSide: BorderSide(color: c.border),
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                        borderSide: BorderSide(color: c.border),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(14),
-                                        borderSide: const BorderSide(color: teal, width: 1.5),
-                                      ),
-                                    ),
-                                    onSubmitted: (_) => _login(),
-                                  ),
-
-                                  // Error
-                                  if (_error != null) ...[
-                                    const SizedBox(height: 10),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 8),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFEF4444).withValues(alpha: 0.10),
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(
-                                            color: const Color(0xFFEF4444).withValues(alpha: 0.3)),
-                                      ),
-                                      child: Text(_error!,
-                                          style: const TextStyle(
-                                              color: Color(0xFFEF4444), fontSize: 13)),
-                                    ),
-                                  ],
-
-                                  const SizedBox(height: 18),
-
-                                  // Sign in button
-                                  SizedBox(
-                                    height: 52,
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(14),
-                                        boxShadow: _loading ? null : [
-                                          BoxShadow(
-                                            color: teal.withValues(alpha: 0.35),
-                                            blurRadius: 18, spreadRadius: -4,
-                                          ),
-                                        ],
-                                      ),
-                                      child: ElevatedButton(
-                                        onPressed: _loading ? null : _login,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: teal,
-                                          foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(14)),
-                                          padding: EdgeInsets.zero,
-                                          elevation: 0,
-                                        ),
-                                        child: _loading
-                                            ? const SizedBox(
-                                                width: 20, height: 20,
-                                                child: CircularProgressIndicator(
-                                                    strokeWidth: 2, color: Colors.white),
-                                              )
-                                            : const Text('Sign in',
-                                                style: TextStyle(
-                                                    fontWeight: FontWeight.w700,
-                                                    fontSize: 15)),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-
                         const SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text("Don't have an account? ",
-                                style: TextStyle(color: c.muted, fontSize: 13)),
-                            GestureDetector(
-                              onTap: () => Navigator.of(context).push(
-                                _iosRoute((_) => const RegisterScreen()),
-                              ),
-                              child: const Text('Sign up',
-                                style: TextStyle(
-                                  color: teal, fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                )),
+                        // GYM text with gradient
+                        ShaderMask(
+                          shaderCallback: (bounds) => const LinearGradient(
+                            colors: [Color(0xFF00E5CC), Color(0xFF4361EE)],
+                          ).createShader(bounds),
+                          child: const Text(
+                            'GYM',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 64,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -2.0,
+                              height: 1.0,
                             ),
-                          ],
+                          ),
+                        ),
+                        // TRACKER subtitle
+                        Text(
+                          'TRACKER',
+                          style: TextStyle(
+                            color: c.muted,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w300,
+                            letterSpacing: 12,
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ),
-              ),
+
+                // BOTTOM SECTION — card slides up from bottom (60%)
+                Expanded(
+                  flex: 6,
+                  child: SlideTransition(
+                    position: _cardSlide,
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: c.surface,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(36),
+                        ),
+                        border: c.isDark
+                            ? Border.all(
+                                color: Colors.white.withValues(alpha: 0.08),
+                                width: 1,
+                              )
+                            : null,
+                        boxShadow: c.isDark
+                            ? null
+                            : [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.12),
+                                  blurRadius: 40,
+                                  spreadRadius: -8,
+                                  offset: const Offset(0, -4),
+                                ),
+                              ],
+                      ),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(28, 32, 28, 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Handle
+                            Center(
+                              child: Container(
+                                width: 36,
+                                height: 4,
+                                margin: const EdgeInsets.only(bottom: 24),
+                                decoration: BoxDecoration(
+                                  color: c.border,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                            ),
+
+                            Text(
+                              'Welcome back',
+                              style: TextStyle(
+                                color: c.text,
+                                fontSize: 26,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -1.0,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Sign in to continue',
+                              style: TextStyle(color: c.muted, fontSize: 14),
+                            ),
+                            const SizedBox(height: 28),
+
+                            // Google Sign-In button
+                            _GoogleButton(
+                              loading: _googleLoading,
+                              onTap: _loginWithGoogle,
+                              c: c,
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // Divider
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Divider(color: c.border, thickness: 1),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                                  child: Text(
+                                    'or',
+                                    style: TextStyle(color: c.muted, fontSize: 13),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Divider(color: c.border, thickness: 1),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // Email TextField
+                            _StyledTextField(
+                              controller: _emailCtrl,
+                              hint: 'Email address',
+                              icon: Icons.email_outlined,
+                              keyboardType: TextInputType.emailAddress,
+                              c: c,
+                              onSubmitted: (_) => _login(),
+                            ),
+                            const SizedBox(height: 12),
+
+                            // Password TextField
+                            _StyledTextField(
+                              controller: _passCtrl,
+                              hint: 'Password',
+                              icon: Icons.lock_outline_rounded,
+                              obscureText: _obscure,
+                              c: c,
+                              onSubmitted: (_) => _login(),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscure
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                  color: c.muted,
+                                  size: 20,
+                                ),
+                                onPressed: () =>
+                                    setState(() => _obscure = !_obscure),
+                              ),
+                            ),
+
+                            // Error text
+                            if (_error != null) ...[
+                              const SizedBox(height: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEF4444)
+                                      .withValues(alpha: 0.10),
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: const Color(0xFFEF4444)
+                                        .withValues(alpha: 0.30),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.error_outline_rounded,
+                                        color: Color(0xFFEF4444), size: 16),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        _error!,
+                                        style: const TextStyle(
+                                            color: Color(0xFFEF4444),
+                                            fontSize: 13),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+
+                            const SizedBox(height: 24),
+
+                            // Sign in button — gradient with SpringButton
+                            SpringButton(
+                              onTap: _loading ? null : _login,
+                              child: Container(
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  gradient: _loading
+                                      ? LinearGradient(
+                                          colors: [
+                                            teal.withValues(alpha: 0.5),
+                                            blue.withValues(alpha: 0.5),
+                                          ],
+                                        )
+                                      : const LinearGradient(
+                                          colors: [
+                                            Color(0xFF00E5CC),
+                                            Color(0xFF4361EE),
+                                          ],
+                                        ),
+                                  borderRadius: BorderRadius.circular(28),
+                                  boxShadow: _loading
+                                      ? null
+                                      : [
+                                          BoxShadow(
+                                            color: teal.withValues(alpha: 0.40),
+                                            blurRadius: 24,
+                                            spreadRadius: -4,
+                                            offset: const Offset(0, 6),
+                                          ),
+                                        ],
+                                ),
+                                alignment: Alignment.center,
+                                child: _loading
+                                    ? const SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2.5,
+                                            color: Colors.white),
+                                      )
+                                    : const Text(
+                                        'Sign in',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w800,
+                                          letterSpacing: -0.3,
+                                        ),
+                                      ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            // Sign up link
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  "Don't have an account? ",
+                                  style:
+                                      TextStyle(color: c.muted, fontSize: 14),
+                                ),
+                                GestureDetector(
+                                  onTap: () {
+                                    HapticFeedback.lightImpact();
+                                    Navigator.of(context).push(
+                                      _slideRoute((_) => const RegisterScreen()),
+                                    );
+                                  },
+                                  child: const Text(
+                                    'Sign up',
+                                    style: TextStyle(
+                                      color: teal,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -410,8 +479,92 @@ class _LoginScreenState extends State<LoginScreen>
   }
 }
 
-// ── Google Sign-In Button ─────────────────────────────────────────────────────
+// ── Styled TextField ──────────────────────────────────────────────────────────
+class _StyledTextField extends StatefulWidget {
+  final TextEditingController controller;
+  final String hint;
+  final IconData icon;
+  final bool obscureText;
+  final TextInputType? keyboardType;
+  final AppColors c;
+  final void Function(String)? onSubmitted;
+  final Widget? suffixIcon;
 
+  const _StyledTextField({
+    required this.controller,
+    required this.hint,
+    required this.icon,
+    required this.c,
+    this.obscureText = false,
+    this.keyboardType,
+    this.onSubmitted,
+    this.suffixIcon,
+  });
+
+  @override
+  State<_StyledTextField> createState() => _StyledTextFieldState();
+}
+
+class _StyledTextFieldState extends State<_StyledTextField> {
+  bool _focused = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.c;
+    return Focus(
+      onFocusChange: (f) => setState(() => _focused = f),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 56,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: _focused && c.isDark
+              ? [
+                  BoxShadow(
+                    color: teal.withValues(alpha: 0.20),
+                    blurRadius: 20,
+                    spreadRadius: -4,
+                  ),
+                ]
+              : null,
+        ),
+        child: TextField(
+          controller: widget.controller,
+          obscureText: widget.obscureText,
+          keyboardType: widget.keyboardType,
+          autocorrect: false,
+          style: TextStyle(color: c.text, fontSize: 15),
+          onSubmitted: widget.onSubmitted,
+          decoration: InputDecoration(
+            hintText: widget.hint,
+            hintStyle: TextStyle(color: c.muted, fontSize: 15),
+            prefixIcon: Icon(widget.icon, color: _focused ? teal : c.muted, size: 20),
+            suffixIcon: widget.suffixIcon,
+            filled: true,
+            fillColor: c.isDark
+                ? Colors.white.withValues(alpha: 0.05)
+                : Colors.black.withValues(alpha: 0.04),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: c.border, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: teal, width: 1.5),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Google Sign-In Button ─────────────────────────────────────────────────────
 class _GoogleButton extends StatelessWidget {
   final bool loading;
   final VoidCallback onTap;
@@ -425,36 +578,38 @@ class _GoogleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return SpringButton(
       onTap: loading ? null : onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        height: 54,
+      child: Container(
+        height: 56,
         decoration: BoxDecoration(
-          color: c.isDark ? const Color(0xFF1E1E1E) : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: c.border),
+          color: c.isDark ? const Color(0xFF1A1A2E) : Colors.white,
+          borderRadius: BorderRadius.circular(28),
+          border: Border.all(color: c.border, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: c.isDark ? 0.3 : 0.08),
-              blurRadius: 16, spreadRadius: -4,
+              color: Colors.black.withValues(alpha: c.isDark ? 0.25 : 0.07),
+              blurRadius: 16,
+              spreadRadius: -4,
               offset: const Offset(0, 4),
             ),
           ],
         ),
         child: loading
-            ? Center(child: CircularProgressIndicator(color: c.muted, strokeWidth: 2))
+            ? Center(
+                child: CircularProgressIndicator(
+                    color: c.muted, strokeWidth: 2))
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   _GoogleLogo(),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Text(
                     'Continue with Google',
                     style: TextStyle(
                       color: c.text,
                       fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                       letterSpacing: -0.2,
                     ),
                   ),
@@ -465,7 +620,7 @@ class _GoogleButton extends StatelessWidget {
   }
 }
 
-// Simple Google "G" logo using 4-color arcs
+// ── Google "G" logo via CustomPainter ────────────────────────────────────────
 class _GoogleLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -487,20 +642,35 @@ class _GoogleLogoPainter extends CustomPainter {
     final rect = Rect.fromCircle(center: Offset(cx, cy), radius: r);
 
     void arc(double start, double sweep, Color color) {
-      canvas.drawArc(rect, start, sweep, false,
-          Paint()..color = color..style = PaintingStyle.stroke
-                ..strokeWidth = sw..strokeCap = StrokeCap.butt);
+      canvas.drawArc(
+        rect,
+        start,
+        sweep,
+        false,
+        Paint()
+          ..color = color
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = sw
+          ..strokeCap = StrokeCap.butt,
+      );
     }
 
     arc(-1.9, 1.2, const Color(0xFFEA4335)); // red
     arc(-0.7, 1.6, const Color(0xFF4285F4)); // blue
-    arc( 0.9, 1.3, const Color(0xFF34A853)); // green
-    arc( 2.2, 1.2, const Color(0xFFFBBC05)); // yellow
+    arc(0.9, 1.3, const Color(0xFF34A853));  // green
+    arc(2.2, 1.2, const Color(0xFFFBBC05));  // yellow
 
-    // Blue horizontal arm of "G"
+    // Blue horizontal arm
     canvas.drawRect(
-      Rect.fromLTWH(cx - sw * 0.1, cy - size.height * 0.13, size.width * 0.44, size.height * 0.26),
-      Paint()..color = const Color(0xFF4285F4)..style = PaintingStyle.fill,
+      Rect.fromLTWH(
+        cx - sw * 0.1,
+        cy - size.height * 0.13,
+        size.width * 0.44,
+        size.height * 0.26,
+      ),
+      Paint()
+        ..color = const Color(0xFF4285F4)
+        ..style = PaintingStyle.fill,
     );
   }
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../l10n/strings.dart';
 import '../models/models.dart';
@@ -358,8 +359,8 @@ class _HomeScreenState extends State<HomeScreen>
 
   // ── FAB (shown for Supplements, Sessions, Program tabs) ───────────────────
   Widget _buildFab(double bottomPad) {
-    // Nav bar height: 54px nav + bottom safe area + padding
-    final navH = 54.0 + (bottomPad > 0 ? bottomPad : 10) + 10;
+    // Nav bar height: pill nav + bottom safe area + padding
+    final navH = 64.0 + (bottomPad > 0 ? bottomPad : 16) + 16 + 16;
 
     if (_tab == 1) {
       return Positioned(
@@ -461,51 +462,51 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  // ── Glass AppBar ───────────────────────────────────────────────────────────
+  // ── Glass AppBar — new design ──────────────────────────────────────────────
   PreferredSize _buildGlassAppBar() {
     final c = AppColors.of(context);
     return PreferredSize(
-      preferredSize: const Size.fromHeight(58),
+      preferredSize: const Size.fromHeight(64),
       child: ClipRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+          filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
           child: Container(
             decoration: BoxDecoration(
               color: c.isDark
-                  ? const Color(0xFF060F1A).withValues(alpha: 0.78)
-                  : Colors.white.withValues(alpha: 0.82),
+                  ? const Color(0xFF08080F).withValues(alpha: 0.80)
+                  : Colors.white.withValues(alpha: 0.85),
               border: Border(
                 bottom: BorderSide(
                   color: c.isDark
-                      ? Colors.white.withValues(alpha: 0.07)
-                      : Colors.black.withValues(alpha: 0.06),
+                      ? Colors.white.withValues(alpha: 0.06)
+                      : Colors.black.withValues(alpha: 0.05),
                 ),
               ),
             ),
             child: SafeArea(
               bottom: false,
               child: SizedBox(
-                height: 58,
+                height: 64,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // ── Logo ─────────────────────────────────────────────
+                      // ── Logo icon + brand ──────────────────────────────
                       Container(
-                        width: 34,
-                        height: 34,
+                        width: 32,
+                        height: 32,
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [Color(0xFF0A7B72), teal],
+                            colors: [Color(0xFF00E5CC), Color(0xFF4361EE)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
-                          borderRadius: BorderRadius.circular(11),
+                          borderRadius: BorderRadius.circular(10),
                           boxShadow: [
                             BoxShadow(
-                              color: teal.withValues(alpha: 0.35),
-                              blurRadius: 12,
+                              color: teal.withValues(alpha: 0.40),
+                              blurRadius: 14,
                               spreadRadius: -3,
                               offset: const Offset(0, 3),
                             ),
@@ -515,80 +516,70 @@ class _HomeScreenState extends State<HomeScreen>
                         child: const Icon(
                           Icons.fitness_center_rounded,
                           color: Colors.white,
-                          size: 17,
+                          size: 16,
                         ),
                       ),
                       const SizedBox(width: 10),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'GYM Tracker',
-                            style: TextStyle(
-                              color: c.text,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.4,
-                              height: 1.1,
-                            ),
-                          ),
-                          if (_userName.isNotEmpty)
-                            Text(
-                              _userName,
-                              style: TextStyle(
-                                color: c.muted.withValues(alpha: 0.8),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w400,
-                                height: 1.2,
-                              ),
-                            ),
-                        ],
+                      Text(
+                        'GYM',
+                        style: TextStyle(
+                          color: c.text,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -1.0,
+                        ),
                       ),
                       const Spacer(),
 
-                      // ── Action pill ──────────────────────────────────────
+                      // ── Action pill (mic, health, music) ──────────────
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(22),
+                        borderRadius: BorderRadius.circular(50),
                         child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 4),
                             decoration: BoxDecoration(
                               color: c.isDark
                                   ? Colors.white.withValues(alpha: 0.07)
                                   : Colors.black.withValues(alpha: 0.04),
-                              borderRadius: BorderRadius.circular(22),
+                              borderRadius: BorderRadius.circular(50),
                               border: Border.all(
                                 color: c.isDark
-                                    ? Colors.white.withValues(alpha: 0.11)
-                                    : Colors.black.withValues(alpha: 0.07),
+                                    ? Colors.white.withValues(alpha: 0.10)
+                                    : Colors.black.withValues(alpha: 0.06),
                               ),
                             ),
                             child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 _appBarIcon(
                                   icon: Icons.mic_rounded,
                                   color: teal,
                                   onTap: () async {
-                                    final logged = await showVoiceActionPanel(context);
-                                    if (logged && mounted) setState(() => _tab = 2);
+                                    final logged =
+                                        await showVoiceActionPanel(context);
+                                    if (logged && mounted) {
+                                      setState(() => _tab = 2);
+                                    }
                                   },
                                 ),
-                                _appBarDivider(),
+                                _appBarDivider(c),
                                 _appBarIcon(
                                   icon: Icons.favorite_rounded,
                                   color: const Color(0xFFEF4444),
                                   onTap: () => Navigator.of(context).push(
-                                    MaterialPageRoute(builder: (_) => const HealthScreen()),
+                                    MaterialPageRoute(
+                                        builder: (_) => const HealthScreen()),
                                   ),
                                 ),
-                                _appBarDivider(),
+                                _appBarDivider(c),
                                 _appBarIcon(
                                   icon: Icons.music_note_rounded,
                                   color: const Color(0xFF1DB954),
                                   onTap: () => Navigator.of(context).push(
-                                    MaterialPageRoute(builder: (_) => const SpotifyScreen()),
+                                    MaterialPageRoute(
+                                        builder: (_) => const SpotifyScreen()),
                                   ),
                                 ),
                               ],
@@ -599,7 +590,7 @@ class _HomeScreenState extends State<HomeScreen>
 
                       const SizedBox(width: 10),
 
-                      // ── Avatar + BT badge ─────────────────────────────────
+                      // ── Avatar circle ─────────────────────────────────
                       GestureDetector(
                         onTap: () => setState(() => _tab = 5),
                         child: Stack(
@@ -616,8 +607,9 @@ class _HomeScreenState extends State<HomeScreen>
                                     : null,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: teal.withValues(alpha: _btConnected ? 0.35 : 0.18),
-                                    blurRadius: 10,
+                                    color: teal.withValues(
+                                        alpha: _btConnected ? 0.40 : 0.20),
+                                    blurRadius: 12,
                                     spreadRadius: -2,
                                   ),
                                 ],
@@ -630,13 +622,17 @@ class _HomeScreenState extends State<HomeScreen>
                               ),
                               child: CircleAvatar(
                                 radius: 17,
-                                backgroundColor: const Color(0xFF0D1A2E),
-                                backgroundImage: (_avatarUrl != null && _avatarUrl!.isNotEmpty)
+                                backgroundColor: const Color(0xFF13131F),
+                                backgroundImage: (_avatarUrl != null &&
+                                        _avatarUrl!.isNotEmpty)
                                     ? NetworkImage(_avatarUrl!)
                                     : null,
-                                child: (_avatarUrl == null || _avatarUrl!.isEmpty)
+                                child: (_avatarUrl == null ||
+                                        _avatarUrl!.isEmpty)
                                     ? Text(
-                                        _userName.isNotEmpty ? _userName[0].toUpperCase() : '?',
+                                        _userName.isNotEmpty
+                                            ? _userName[0].toUpperCase()
+                                            : '?',
                                         style: const TextStyle(
                                           color: teal,
                                           fontSize: 14,
@@ -652,7 +648,8 @@ class _HomeScreenState extends State<HomeScreen>
                                 right: -3,
                                 bottom: -3,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 4, vertical: 2),
                                   decoration: BoxDecoration(
                                     color: _btBattery! < 20
                                         ? const Color(0xFFEF4444)
@@ -661,7 +658,8 @@ class _HomeScreenState extends State<HomeScreen>
                                             : const Color(0xFF22C55E),
                                     borderRadius: BorderRadius.circular(7),
                                     border: Border.all(
-                                        color: const Color(0xFF060F1A), width: 1.5),
+                                        color: const Color(0xFF08080F),
+                                        width: 1.5),
                                   ),
                                   child: Text(
                                     '$_btBattery%',
@@ -702,146 +700,169 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _appBarDivider() {
+  Widget _appBarDivider(AppColors c) {
     return Container(
       width: 1,
       height: 16,
-      color: Colors.white.withValues(alpha: 0.10),
+      color: c.isDark
+          ? Colors.white.withValues(alpha: 0.10)
+          : Colors.black.withValues(alpha: 0.08),
     );
   }
 
-  // ── Glass Bottom Bar ───────────────────────────────────────────────────────
+  // ── Floating Pill Bottom Bar ───────────────────────────────────────────────
   Widget _buildGlassBottomBar(double bottomPad) {
-    final safeBottom = bottomPad > 0 ? bottomPad : 10.0;
+    final safeBottom = bottomPad > 0 ? bottomPad : 16.0;
     final c = AppColors.of(context);
-    return ClipRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-        child: Container(
-          decoration: BoxDecoration(
-            color: c.isDark
-                ? const Color(0xFF060F1A).withValues(alpha: 0.85)
-                : Colors.white.withValues(alpha: 0.88),
-            border: Border(
-              top: BorderSide(
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: safeBottom + 16,
+        left: 24,
+        right: 24,
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(50),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
+          child: Container(
+            height: 64,
+            decoration: BoxDecoration(
+              color: c.isDark
+                  ? const Color(0xFF13131F).withValues(alpha: 0.90)
+                  : Colors.white.withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(50),
+              border: Border.all(
                 color: c.isDark
-                    ? Colors.white.withValues(alpha: 0.07)
+                    ? Colors.white.withValues(alpha: 0.10)
                     : Colors.black.withValues(alpha: 0.06),
+                width: 1,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: teal.withValues(alpha: c.isDark ? 0.15 : 0.08),
+                  blurRadius: 32,
+                  spreadRadius: -4,
+                  offset: const Offset(0, 4),
+                ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.20),
+                  blurRadius: 20,
+                  spreadRadius: -6,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
+            child: _buildNavRow(c),
           ),
-          padding: EdgeInsets.only(
-            top: 10,
-            bottom: safeBottom,
-            left: 8,
-            right: 8,
-          ),
-          child: _buildNavRow(),
         ),
       ),
     );
   }
 
   // ── Nav row with embedded AI centre button ─────────────────────────────────
-  Widget _buildNavRow() {
+  Widget _buildNavRow(AppColors c) {
     // 3 normal tabs | AI centre | 3 normal tabs
     final leftItems = [
-      (0, Icons.grid_view_rounded,      Icons.grid_view_outlined,      t('tab_dashboard')),
-      (1, Icons.science_rounded,        Icons.science_outlined,        t('tab_supplements')),
-      (2, Icons.fitness_center_rounded, Icons.fitness_center_outlined, t('tab_sessions')),
+      (0, Icons.grid_view_rounded, Icons.grid_view_outlined, t('tab_dashboard')),
+      (1, Icons.science_rounded, Icons.science_outlined, t('tab_supplements')),
+      (2, Icons.fitness_center_rounded, Icons.fitness_center_outlined,
+          t('tab_sessions')),
     ];
     final rightItems = [
-      (3, Icons.event_note_rounded,  Icons.event_note_outlined,  t('tab_program')),
-      (4, Icons.camera_alt_rounded,  Icons.camera_alt_outlined,  t('tab_calories')),
-      (5, Icons.person_rounded,      Icons.person_outlined,      'Profile'),
+      (3, Icons.event_note_rounded, Icons.event_note_outlined, t('tab_program')),
+      (4, Icons.camera_alt_rounded, Icons.camera_alt_outlined, t('tab_calories')),
+      (5, Icons.person_rounded, Icons.person_outlined, 'Profile'),
     ];
 
-    return SizedBox(
-      height: 54,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // Left tabs
-          ...leftItems.map((item) {
-            final (i, activeIcon, inactiveIcon, label) = item;
-            return Expanded(child: _navItem(i, activeIcon, inactiveIcon, label));
-          }),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Left tabs
+        ...leftItems.map((item) {
+          final (i, activeIcon, inactiveIcon, label) = item;
+          return Expanded(child: _navItem(i, activeIcon, inactiveIcon, label, c));
+        }),
 
-          // ── AI centre button ─────────────────────────────────────────────
-          GestureDetector(
-            onTap: _toggleAi,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutCubic,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: _aiOpen
-                    ? const LinearGradient(
-                        colors: [Color(0xFF0A7B72), teal],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : LinearGradient(
-                        colors: [
-                          teal.withValues(alpha: 0.18),
-                          blue.withValues(alpha: 0.12),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                border: Border.all(
-                  color: _aiOpen
-                      ? teal.withValues(alpha: 0.7)
-                      : teal.withValues(alpha: 0.28),
-                  width: 1.5,
-                ),
-                boxShadow: _aiOpen
-                    ? [
-                        BoxShadow(
-                          color: teal.withValues(alpha: 0.40),
-                          blurRadius: 20,
-                          spreadRadius: -4,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
-                    : [
-                        BoxShadow(
-                          color: teal.withValues(alpha: 0.12),
-                          blurRadius: 10,
-                          spreadRadius: -4,
-                        ),
+        // ── AI centre button ───────────────────────────────────────────────
+        GestureDetector(
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            _toggleAi();
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: _aiOpen
+                  ? const LinearGradient(
+                      colors: [Color(0xFF00E5CC), Color(0xFF4361EE)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : LinearGradient(
+                      colors: [
+                        teal.withValues(alpha: 0.18),
+                        blue.withValues(alpha: 0.12),
                       ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+              border: Border.all(
+                color: _aiOpen
+                    ? teal.withValues(alpha: 0.8)
+                    : teal.withValues(alpha: 0.30),
+                width: 1.5,
               ),
-              child: Icon(
-                Icons.auto_awesome_rounded,
-                color: _aiOpen ? Colors.white : teal,
-                size: 22,
-              ),
+              boxShadow: _aiOpen
+                  ? [
+                      BoxShadow(
+                        color: teal.withValues(alpha: 0.45),
+                        blurRadius: 24,
+                        spreadRadius: -4,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : [
+                      BoxShadow(
+                        color: teal.withValues(alpha: 0.14),
+                        blurRadius: 12,
+                        spreadRadius: -4,
+                      ),
+                    ],
+            ),
+            child: Icon(
+              Icons.auto_awesome_rounded,
+              color: _aiOpen ? Colors.white : teal,
+              size: 22,
             ),
           ),
+        ),
 
-          // Right tabs
-          ...rightItems.map((item) {
-            final (i, activeIcon, inactiveIcon, label) = item;
-            return Expanded(child: _navItem(i, activeIcon, inactiveIcon, label));
-          }),
-        ],
-      ),
+        // Right tabs
+        ...rightItems.map((item) {
+          final (i, activeIcon, inactiveIcon, label) = item;
+          return Expanded(child: _navItem(i, activeIcon, inactiveIcon, label, c));
+        }),
+      ],
     );
   }
 
-  Widget _navItem(int i, IconData activeIcon, IconData inactiveIcon, String label) {
+  // ── Nav item — new pill style ──────────────────────────────────────────────
+  Widget _navItem(int i, IconData activeIcon, IconData inactiveIcon,
+      String label, AppColors c) {
     final active = _tab == i;
-    final c = AppColors.of(context);
     final inactiveColor = c.isDark
-        ? Colors.white.withValues(alpha: 0.40)
-        : Colors.black.withValues(alpha: 0.35);
+        ? Colors.white.withValues(alpha: 0.38)
+        : Colors.black.withValues(alpha: 0.32);
 
     return GestureDetector(
       onTap: () {
+        HapticFeedback.selectionClick();
         if (_tab == 5 && i != 5) {
           _loadAvatar();
           _startSpotifyPolling();
@@ -849,95 +870,135 @@ class _HomeScreenState extends State<HomeScreen>
         setState(() => _tab = i);
       },
       behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOutBack,
-            width: 38,
-            height: 28,
-            decoration: active
-                ? BoxDecoration(
-                    color: teal.withValues(alpha: c.isDark ? 0.15 : 0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  )
-                : null,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              transitionBuilder: (child, anim) => ScaleTransition(
-                scale: Tween<double>(begin: 0.7, end: 1.0).animate(
-                  CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
-                ),
-                child: child,
+      child: Center(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutBack,
+          width: 36,
+          height: 36,
+          decoration: active
+              ? BoxDecoration(
+                  color: teal,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: teal.withValues(alpha: 0.40),
+                      blurRadius: 16,
+                      spreadRadius: -4,
+                    ),
+                  ],
+                )
+              : const BoxDecoration(shape: BoxShape.circle),
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 220),
+            transitionBuilder: (child, anim) => ScaleTransition(
+              scale: Tween<double>(begin: 0.65, end: 1.0).animate(
+                CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
               ),
-              child: Icon(
-                active ? activeIcon : inactiveIcon,
-                key: ValueKey(active ? 'a$i' : 'n$i'),
-                color: active ? teal : inactiveColor,
-                size: 20,
-              ),
+              child: child,
+            ),
+            child: Icon(
+              active ? activeIcon : inactiveIcon,
+              key: ValueKey(active ? 'a$i' : 'n$i'),
+              color: active ? Colors.white : inactiveColor,
+              size: 20,
             ),
           ),
-          const SizedBox(height: 2),
-          AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 200),
-            style: TextStyle(
-              color: active ? teal : inactiveColor,
-              fontSize: 9.5,
-              fontWeight: active ? FontWeight.w700 : FontWeight.w400,
-              letterSpacing: 0.1,
-            ),
-            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-          ),
-        ],
+        ),
       ),
     );
   }
 
   // ── Dashboard Tab ──────────────────────────────────────────────────────────
   Widget _buildDashboard() {
+    final c = AppColors.of(context);
     if (_loading) {
-      return const Center(
-          child: CircularProgressIndicator(color: teal, strokeWidth: 2));
+      return Center(
+          child: CircularProgressIndicator(color: teal, strokeWidth: 2,
+              backgroundColor: c.border));
     }
+    final hour = DateTime.now().hour;
+    final greeting = hour < 12
+        ? 'Good morning'
+        : hour < 17
+            ? 'Good afternoon'
+            : 'Good evening';
+
     return RefreshIndicator(
       color: teal,
-      backgroundColor: const Color(0xFF0C1525),
+      backgroundColor: c.surface,
       onRefresh: _loadDashboard,
       child: ListView(
         padding: EdgeInsets.only(
-          top: kToolbarHeight + MediaQuery.of(context).padding.top + 16,
+          top: kToolbarHeight + MediaQuery.of(context).padding.top + 20,
           left: 16,
           right: 16,
           bottom: 120,
         ),
         children: [
-          // ROI card
+          // ── Greeting ────────────────────────────────────────────────────
           AnimatedOpacity(
             opacity: _entered ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeOut,
+            duration: const Duration(milliseconds: 400),
             child: AnimatedSlide(
-              offset: _entered ? Offset.zero : const Offset(0, 0.08),
-              duration: const Duration(milliseconds: 500),
+              offset: _entered ? Offset.zero : const Offset(0, 0.06),
+              duration: const Duration(milliseconds: 400),
               curve: Curves.easeOutCubic,
-              child: _roi != null
-                  ? _buildRoiCard(_roi!)
-                  : const SizedBox.shrink(),
+              child: Padding(
+                padding: const EdgeInsets.only(left: 4, bottom: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _userName.isNotEmpty
+                          ? '$greeting, ${_userName.split(' ').first} 👋'
+                          : '$greeting 👋',
+                      style: TextStyle(
+                        color: c.text,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.8,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Track your progress today',
+                      style: TextStyle(
+                        color: c.muted,
+                        fontSize: 14,
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-          if (_roi != null) const SizedBox(height: 16),
-          // Profile card
+
+          // ── ROI stat cards (3 colorful) ──────────────────────────────────
+          if (_roi != null) ...[
+            AnimatedOpacity(
+              opacity: _entered ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 500),
+              child: AnimatedSlide(
+                offset: _entered ? Offset.zero : const Offset(0, 0.08),
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeOutCubic,
+                child: _buildRoiRow(_roi!, c),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
+
+          // ── Profile config card ──────────────────────────────────────────
           AnimatedOpacity(
             opacity: _entered ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeOut,
+            duration: const Duration(milliseconds: 600),
             child: AnimatedSlide(
               offset: _entered ? Offset.zero : const Offset(0, 0.08),
               duration: const Duration(milliseconds: 600),
               curve: Curves.easeOutCubic,
-              child: _buildProfileCard(),
+              child: _buildProfileCard(c),
             ),
           ),
         ],
@@ -945,67 +1006,119 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Widget _buildRoiCard(GymRoi roi) {
-    return GlassCard(
-      glowColor: teal,
-      padding: EdgeInsets.zero,
-      child: IntrinsicHeight(
-        child: Row(
-          children: [
-            _roiStat('${roi.sessionsCount}', t('sessions_month'),
-                Icons.calendar_month_rounded),
-            VerticalDivider(
-                color: Colors.white.withValues(alpha: 0.10), width: 1),
-            _roiStat('\$${roi.monthlyCost.toStringAsFixed(0)}',
-                t('gym_cost'), Icons.credit_card_rounded),
-            VerticalDivider(
-                color: Colors.white.withValues(alpha: 0.10), width: 1),
-            _roiStat('\$${roi.costPerSession.toStringAsFixed(2)}',
-                t('cost_per_session'), Icons.trending_down_rounded),
-          ],
+  Widget _buildRoiRow(GymRoi roi, AppColors c) {
+    return Row(
+      children: [
+        Expanded(
+          child: _statCard(
+            value: '${roi.sessionsCount}',
+            label: t('sessions_month'),
+            icon: Icons.calendar_month_rounded,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF00E5CC), Color(0xFF00B4A0)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            glowColor: teal,
+            c: c,
+          ),
         ),
-      ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _statCard(
+            value: '\$${roi.monthlyCost.toStringAsFixed(0)}',
+            label: t('gym_cost'),
+            icon: Icons.credit_card_rounded,
+            gradient: const LinearGradient(
+              colors: [Color(0xFF4361EE), Color(0xFF7B2FBE)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            glowColor: blue,
+            c: c,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _statCard(
+            value: '\$${roi.costPerSession.toStringAsFixed(2)}',
+            label: t('cost_per_session'),
+            icon: Icons.trending_down_rounded,
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFF6B35), Color(0xFFE11D48)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            glowColor: const Color(0xFFFF6B35),
+            c: c,
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _roiStat(String value, String label, IconData icon) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
-        child: Column(
-          children: [
-            Icon(icon, size: 16, color: teal.withValues(alpha: 0.7)),
-            const SizedBox(height: 8),
-            TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: 1),
-              duration: const Duration(milliseconds: 900),
-              curve: Curves.easeOutCubic,
-              builder: (_, v, child) => Opacity(opacity: v, child: child),
-              child: Text(
-                value,
-                style: const TextStyle(
-                  color: textPrimary,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
-                ),
+  Widget _statCard({
+    required String value,
+    required String label,
+    required IconData icon,
+    required LinearGradient gradient,
+    required Color glowColor,
+    required AppColors c,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: gradient,
+        boxShadow: [
+          BoxShadow(
+            color: glowColor.withValues(alpha: c.isDark ? 0.35 : 0.20),
+            blurRadius: 20,
+            spreadRadius: -4,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: Colors.white.withValues(alpha: 0.85), size: 18),
+          const SizedBox(height: 10),
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 900),
+            curve: Curves.easeOutCubic,
+            builder: (_, v, child) => Opacity(opacity: v, child: child),
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                  color: textMuted, fontSize: 10, letterSpacing: 0.2),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.75),
+              fontSize: 10,
+              letterSpacing: 0.2,
+              fontWeight: FontWeight.w500,
             ),
-          ],
-        ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildProfileCard() {
+  Widget _buildProfileCard(AppColors c) {
     return GlassCard(
+      radius: 28,
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1013,54 +1126,57 @@ class _HomeScreenState extends State<HomeScreen>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: teal.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF00E5CC), Color(0xFF4361EE)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.person_outline_rounded,
-                    color: teal, size: 16),
+                    color: Colors.white, size: 16),
               ),
               const SizedBox(width: 10),
               Text(
                 t('fitness_profile'),
-                style: const TextStyle(
-                    color: textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700),
+                style: TextStyle(
+                    color: c.text,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           TextField(
             controller: _costCtrl,
             keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(labelText: t('gym_cost_label')),
-            style: const TextStyle(color: textPrimary),
+            style: TextStyle(color: c.text),
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             value: _goal,
-            dropdownColor: const Color(0xFF0C1525),
-            style: const TextStyle(color: textPrimary),
+            dropdownColor: c.surface,
+            style: TextStyle(color: c.text),
             decoration: InputDecoration(
               labelText: t('fitness_goal_label'),
               filled: true,
-              fillColor: Colors.white.withValues(alpha: 0.05),
+              fillColor: c.inputFill,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.12)),
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: c.border),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.12)),
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: c.border),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: teal, width: 1.5),
+              focusedBorder: const OutlineInputBorder(
+                borderRadius: BorderRadius.all(Radius.circular(16)),
+                borderSide: BorderSide(color: teal, width: 1.5),
               ),
             ),
             items: [
@@ -1082,48 +1198,68 @@ class _HomeScreenState extends State<HomeScreen>
           TextField(
             controller: _badgeCtrl,
             decoration: InputDecoration(labelText: t('badge_label')),
-            style: const TextStyle(color: textPrimary),
+            style: TextStyle(color: c.text),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              child: ElevatedButton(
-                onPressed: _saving ? null : _saveProfile,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      _saved ? const Color(0xFF16A34A) : teal,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  elevation: 0,
+            child: GestureDetector(
+              onTap: _saving ? null : _saveProfile,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                decoration: BoxDecoration(
+                  gradient: _saved
+                      ? const LinearGradient(
+                          colors: [Color(0xFF16A34A), Color(0xFF15803D)])
+                      : const LinearGradient(
+                          colors: [Color(0xFF00E5CC), Color(0xFF4361EE)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (_saved
+                              ? const Color(0xFF16A34A)
+                              : teal)
+                          .withValues(alpha: 0.35),
+                      blurRadius: 20,
+                      spreadRadius: -4,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
-                child: _saving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            _saved
-                                ? Icons.check_rounded
-                                : Icons.save_outlined,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            _saved ? t('saved') : t('save_profile'),
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w700),
-                          ),
-                        ],
-                      ),
+                child: Center(
+                  child: _saving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _saved
+                                  ? Icons.check_rounded
+                                  : Icons.save_outlined,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _saved ? t('saved') : t('save_profile'),
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15),
+                            ),
+                          ],
+                        ),
+                ),
               ),
             ),
           ),
@@ -1204,7 +1340,7 @@ class _UpdateDialogState extends State<_UpdateDialog>
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(32),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
                 child: Container(
@@ -1217,7 +1353,7 @@ class _UpdateDialogState extends State<_UpdateDialog>
                         Colors.white.withValues(alpha: 0.06),
                       ],
                     ),
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(32),
                     border: Border.all(
                       color: Colors.white.withValues(alpha: 0.15),
                     ),
@@ -1235,13 +1371,11 @@ class _UpdateDialogState extends State<_UpdateDialog>
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // ── Icon ────────────────────────────────────────
+                        // Icon
                         AnimatedBuilder(
                           animation: _pulse,
                           builder: (_, child) => Transform.scale(
-                            scale: _downloading && !_done
-                                ? _pulse.value
-                                : 1.0,
+                            scale: _downloading && !_done ? _pulse.value : 1.0,
                             child: child,
                           ),
                           child: Container(
@@ -1258,7 +1392,7 @@ class _UpdateDialogState extends State<_UpdateDialog>
                                         const Color(0xFF16A34A),
                                       ]
                                     : [
-                                        const Color(0xFF7C3AED),
+                                        const Color(0xFF7B2FBE),
                                         teal,
                                       ],
                               ),
@@ -1287,7 +1421,6 @@ class _UpdateDialogState extends State<_UpdateDialog>
 
                         const SizedBox(height: 20),
 
-                        // ── Title ────────────────────────────────────────
                         Text(
                           _done
                               ? 'Готово!'
@@ -1302,154 +1435,62 @@ class _UpdateDialogState extends State<_UpdateDialog>
                           ),
                         ),
 
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
 
                         Text(
                           _done
-                              ? 'Відкриваємо інсталятор…'
+                              ? 'Оновлення встановлено'
                               : _downloading
-                                  ? 'GYM Tracker build $buildNum'
-                                  : 'GYM Tracker build $buildNum готовий до встановлення',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: textPrimary.withValues(alpha: 0.55),
-                            fontSize: 13,
+                                  ? '$pct%'
+                                  : 'Збірка #$buildNum',
+                          style: const TextStyle(
+                            color: textMuted,
+                            fontSize: 14,
                           ),
                         ),
 
-                        const SizedBox(height: 24),
+                        if (_downloading && !_done) ...[
+                          const SizedBox(height: 16),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(50),
+                            child: LinearProgressIndicator(
+                              value: _progress,
+                              backgroundColor:
+                                  Colors.white.withValues(alpha: 0.10),
+                              valueColor:
+                                  const AlwaysStoppedAnimation<Color>(teal),
+                              minHeight: 6,
+                            ),
+                          ),
+                        ],
 
-                        // ── Progress bar (only when downloading) ─────────
-                        if (_downloading) ...[
-                          // Percentage
+                        if (!_downloading && !_done) ...[
+                          const SizedBox(height: 24),
                           Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                _done ? 'Завершено' : 'Завантажено',
-                                style: TextStyle(
-                                  color:
-                                      textPrimary.withValues(alpha: 0.5),
-                                  fontSize: 12,
+                              Expanded(
+                                child: TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: Text(
+                                    'Пізніше',
+                                    style: TextStyle(color: textMuted),
+                                  ),
                                 ),
                               ),
-                              Text(
-                                '$pct%',
-                                style: const TextStyle(
-                                  color: teal,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: _startDownload,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: teal,
+                                    foregroundColor: Colors.white,
+                                    shape: const StadiumBorder(),
+                                    elevation: 0,
+                                  ),
+                                  child: const Text('Оновити'),
                                 ),
                               ),
                             ],
-                          ),
-                          const SizedBox(height: 8),
-
-                          // Glowing animated bar
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Stack(
-                              children: [
-                                Container(
-                                  height: 8,
-                                  color: Colors.white
-                                      .withValues(alpha: 0.08),
-                                ),
-                                AnimatedFractionallySizedBox(
-                                  duration:
-                                      const Duration(milliseconds: 200),
-                                  widthFactor: _progress.clamp(0.0, 1.0),
-                                  child: Container(
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      borderRadius:
-                                          BorderRadius.circular(8),
-                                      gradient: _done
-                                          ? const LinearGradient(colors: [
-                                              Color(0xFF22C55E),
-                                              Color(0xFF86EFAC),
-                                            ])
-                                          : const LinearGradient(colors: [
-                                              Color(0xFF7C3AED),
-                                              teal,
-                                            ]),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: teal
-                                              .withValues(alpha: 0.6),
-                                          blurRadius: 10,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-
-                        // ── Buttons ──────────────────────────────────────
-                        if (!_downloading) ...[
-                          // Download button
-                          GestureDetector(
-                            onTap: _startDownload,
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 15),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFF7C3AED), teal],
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: teal.withValues(alpha: 0.4),
-                                    blurRadius: 20,
-                                    spreadRadius: -4,
-                                  ),
-                                ],
-                              ),
-                              child: const Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.download_rounded,
-                                      color: Colors.white, size: 18),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Встановити',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 15,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-
-                          // Later button
-                          TextButton(
-                            onPressed: () {
-                              final build =
-                                  widget.info['build'] as int? ?? 0;
-                              UpdateService.instance.dismissBuild(build);
-                              Navigator.pop(context);
-                            },
-                            child: Text(
-                              'Пізніше',
-                              style: TextStyle(
-                                color: textPrimary.withValues(alpha: 0.4),
-                                fontSize: 14,
-                              ),
-                            ),
                           ),
                         ],
                       ],
