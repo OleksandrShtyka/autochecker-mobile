@@ -167,7 +167,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF060F1A),
+      backgroundColor: AppColors.of(context).bg,
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: teal, strokeWidth: 2))
           : FadeTransition(
@@ -201,7 +201,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget _buildSliverAppBar() {
     return SliverAppBar(
       expandedHeight: 220,
-      backgroundColor: const Color(0xFF060F1A),
+      backgroundColor: AppColors.of(context).bg,
       pinned: true,
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(

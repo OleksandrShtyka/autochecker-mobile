@@ -257,7 +257,7 @@ class _HomeScreenState extends State<HomeScreen>
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       extendBodyBehindAppBar: true,
       extendBody: true,
       appBar: _buildGlassAppBar(),
@@ -463,17 +463,22 @@ class _HomeScreenState extends State<HomeScreen>
 
   // ── Glass AppBar ───────────────────────────────────────────────────────────
   PreferredSize _buildGlassAppBar() {
+    final c = AppColors.of(context);
     return PreferredSize(
       preferredSize: const Size.fromHeight(58),
       child: ClipRect(
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+          filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
           child: Container(
             decoration: BoxDecoration(
-              color: const Color(0xFF060F1A).withValues(alpha: 0.75),
+              color: c.isDark
+                  ? const Color(0xFF060F1A).withValues(alpha: 0.78)
+                  : Colors.white.withValues(alpha: 0.82),
               border: Border(
                 bottom: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.06),
+                  color: c.isDark
+                      ? Colors.white.withValues(alpha: 0.07)
+                      : Colors.black.withValues(alpha: 0.06),
                 ),
               ),
             ),
@@ -518,10 +523,10 @@ class _HomeScreenState extends State<HomeScreen>
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'GYM Tracker',
                             style: TextStyle(
-                              color: textPrimary,
+                              color: c.text,
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.4,
@@ -532,7 +537,7 @@ class _HomeScreenState extends State<HomeScreen>
                             Text(
                               _userName,
                               style: TextStyle(
-                                color: textMuted.withValues(alpha: 0.7),
+                                color: c.muted.withValues(alpha: 0.8),
                                 fontSize: 11,
                                 fontWeight: FontWeight.w400,
                                 height: 1.2,
@@ -550,10 +555,14 @@ class _HomeScreenState extends State<HomeScreen>
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.06),
+                              color: c.isDark
+                                  ? Colors.white.withValues(alpha: 0.07)
+                                  : Colors.black.withValues(alpha: 0.04),
                               borderRadius: BorderRadius.circular(22),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.10),
+                                color: c.isDark
+                                    ? Colors.white.withValues(alpha: 0.11)
+                                    : Colors.black.withValues(alpha: 0.07),
                               ),
                             ),
                             child: Row(
@@ -704,14 +713,21 @@ class _HomeScreenState extends State<HomeScreen>
   // ── Glass Bottom Bar ───────────────────────────────────────────────────────
   Widget _buildGlassBottomBar(double bottomPad) {
     final safeBottom = bottomPad > 0 ? bottomPad : 10.0;
+    final c = AppColors.of(context);
     return ClipRect(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+        filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF060F1A).withValues(alpha: 0.82),
+            color: c.isDark
+                ? const Color(0xFF060F1A).withValues(alpha: 0.85)
+                : Colors.white.withValues(alpha: 0.88),
             border: Border(
-              top: BorderSide(color: Colors.white.withValues(alpha: 0.07)),
+              top: BorderSide(
+                color: c.isDark
+                    ? Colors.white.withValues(alpha: 0.07)
+                    : Colors.black.withValues(alpha: 0.06),
+              ),
             ),
           ),
           padding: EdgeInsets.only(
@@ -819,6 +835,11 @@ class _HomeScreenState extends State<HomeScreen>
 
   Widget _navItem(int i, IconData activeIcon, IconData inactiveIcon, String label) {
     final active = _tab == i;
+    final c = AppColors.of(context);
+    final inactiveColor = c.isDark
+        ? Colors.white.withValues(alpha: 0.40)
+        : Colors.black.withValues(alpha: 0.35);
+
     return GestureDetector(
       onTap: () {
         if (_tab == 5 && i != 5) {
@@ -832,24 +853,28 @@ class _HomeScreenState extends State<HomeScreen>
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            width: 36,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutBack,
+            width: 38,
             height: 28,
             decoration: active
                 ? BoxDecoration(
-                    color: teal.withValues(alpha: 0.13),
-                    borderRadius: BorderRadius.circular(10),
+                    color: teal.withValues(alpha: c.isDark ? 0.15 : 0.12),
+                    borderRadius: BorderRadius.circular(12),
                   )
                 : null,
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 180),
-              transitionBuilder: (child, anim) =>
-                  ScaleTransition(scale: anim, child: child),
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (child, anim) => ScaleTransition(
+                scale: Tween<double>(begin: 0.7, end: 1.0).animate(
+                  CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
+                ),
+                child: child,
+              ),
               child: Icon(
                 active ? activeIcon : inactiveIcon,
                 key: ValueKey(active ? 'a$i' : 'n$i'),
-                color: active ? teal : textMuted.withValues(alpha: 0.55),
+                color: active ? teal : inactiveColor,
                 size: 20,
               ),
             ),
@@ -858,9 +883,9 @@ class _HomeScreenState extends State<HomeScreen>
           AnimatedDefaultTextStyle(
             duration: const Duration(milliseconds: 200),
             style: TextStyle(
-              color: active ? teal : textMuted.withValues(alpha: 0.45),
+              color: active ? teal : inactiveColor,
               fontSize: 9.5,
-              fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+              fontWeight: active ? FontWeight.w700 : FontWeight.w400,
               letterSpacing: 0.1,
             ),
             child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),

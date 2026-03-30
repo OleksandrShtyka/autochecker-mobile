@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../theme.dart';
@@ -19,7 +20,7 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 12),
+      duration: const Duration(seconds: 14),
     )..repeat();
   }
 
@@ -31,41 +32,97 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
 
   @override
   Widget build(BuildContext context) {
+    final c = AppColors.of(context);
+    final isDark = c.isDark;
+
     return RepaintBoundary(
       child: AnimatedBuilder(
         animation: _ctrl,
         builder: (context, _) {
           final t = _ctrl.value * 2 * pi;
           final size = MediaQuery.of(context).size;
+          final w = size.width;
+          final h = size.height;
+
           return Stack(
             fit: StackFit.expand,
             children: [
-              // Deep navy-black background
-              Container(color: bgColor),
-              // Blob 1 — teal
+              // Base background
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? const [Color(0xFF060B14), Color(0xFF0A1628), Color(0xFF060B14)]
+                        : const [Color(0xFFF5F7FF), Color(0xFFEFF4FF), Color(0xFFF2F5FF)],
+                    stops: const [0.0, 0.5, 1.0],
+                  ),
+                ),
+              ),
+
+              // Blob 1 — teal top-left
               _blob(
-                left: size.width * 0.05 + sin(t * 0.7) * 30,
-                top: size.height * 0.02 + cos(t * 0.5) * 40,
-                size: 250,
+                left: w * 0.0 + sin(t * 0.6) * 35,
+                top: h * 0.0 + cos(t * 0.45) * 45,
+                size: 300,
                 color: teal,
-                opacity: 0.20,
+                opacity: isDark ? 0.22 : 0.15,
               ),
-              // Blob 2 — blue
+              // Blob 2 — blue bottom-right
               _blob(
-                right: size.width * 0.02 + sin(t * 0.4 + 2.1) * 35,
-                bottom: size.height * 0.12 + cos(t * 0.6 + 1.3) * 30,
-                size: 280,
+                right: w * 0.0 + sin(t * 0.35 + 2.0) * 40,
+                bottom: h * 0.08 + cos(t * 0.55 + 1.2) * 35,
+                size: 320,
                 color: blue,
-                opacity: 0.16,
+                opacity: isDark ? 0.18 : 0.12,
               ),
-              // Blob 3 — purple
+              // Blob 3 — purple center
               _blob(
-                left: size.width * 0.25 + sin(t * 0.3 + 4.2) * 50,
-                top: size.height * 0.40 + cos(t * 0.8 + 3.1) * 35,
-                size: 220,
+                left: w * 0.2 + sin(t * 0.28 + 4.1) * 55,
+                top: h * 0.38 + cos(t * 0.72 + 3.0) * 40,
+                size: 240,
                 color: const Color(0xFF7C3AED),
-                opacity: 0.12,
+                opacity: isDark ? 0.13 : 0.07,
               ),
+              // Blob 4 — teal bottom-left
+              _blob(
+                left: w * 0.0 + sin(t * 0.52 + 1.5) * 25,
+                bottom: h * 0.05 + cos(t * 0.38 + 2.7) * 30,
+                size: 200,
+                color: teal,
+                opacity: isDark ? 0.10 : 0.08,
+              ),
+              // Blob 5 — rose top-right
+              _blob(
+                right: w * 0.05 + sin(t * 0.44 + 3.5) * 30,
+                top: h * 0.10 + cos(t * 0.62 + 0.8) * 25,
+                size: 180,
+                color: const Color(0xFFE11D48),
+                opacity: isDark ? 0.07 : 0.05,
+              ),
+
+              // Subtle grain overlay (dark only)
+              if (isDark)
+                Positioned.fill(
+                  child: ClipRect(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 0, sigmaY: 0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withValues(alpha: 0.08),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           );
         },
@@ -95,8 +152,10 @@ class _AnimatedBackgroundState extends State<AnimatedBackground>
           gradient: RadialGradient(
             colors: [
               color.withValues(alpha: opacity),
+              color.withValues(alpha: opacity * 0.5),
               color.withValues(alpha: 0),
             ],
+            stops: const [0.0, 0.5, 1.0],
           ),
         ),
       ),

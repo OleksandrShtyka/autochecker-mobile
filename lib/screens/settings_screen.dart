@@ -344,7 +344,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF060F1A),
+      backgroundColor: AppColors.of(context).bg,
       body: AnimatedBuilder(
       animation: _entranceCtrl,
       builder: (context, child) {
@@ -1246,36 +1246,56 @@ class _SettingsScreenState extends State<SettingsScreen>
   // ── Helpers ─────────────────────────────────────────────────────────────────
 
   Widget _glassSection({required Widget child}) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withValues(alpha: 0.09),
-                Colors.white.withValues(alpha: 0.03),
+    final c = AppColors.of(context);
+    Widget card = Container(
+      decoration: BoxDecoration(
+        color: c.cardFill,
+        gradient: c.isDark
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withValues(alpha: 0.09),
+                  Colors.white.withValues(alpha: 0.03),
+                ],
+              )
+            : null,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: c.cardBorder),
+        boxShadow: c.isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  blurRadius: 20,
+                  spreadRadius: -4,
+                  offset: const Offset(0, 4),
+                ),
               ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border:
-                Border.all(color: Colors.white.withValues(alpha: 0.11)),
-          ),
-          child: child,
-        ),
       ),
+      child: child,
     );
+    if (c.isDark) {
+      card = ClipRRect(
+        borderRadius: BorderRadius.circular(22),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: card,
+        ),
+      );
+    }
+    return card;
   }
 
-  Widget _divider() => Divider(
-        color: Colors.white.withValues(alpha: 0.08),
-        height: 1,
-        indent: 16,
-        endIndent: 16,
-      );
+  Widget _divider() {
+    final c = AppColors.of(context);
+    return Divider(
+      color: c.divider,
+      height: 1,
+      indent: 16,
+      endIndent: 16,
+    );
+  }
 
   Widget _sectionHeader(String label) {
     return Padding(
@@ -1299,39 +1319,33 @@ class _SettingsScreenState extends State<SettingsScreen>
     required bool value,
     required void Function(bool) onChanged,
   }) {
+    final c = AppColors.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: const EdgeInsets.all(7),
             decoration: BoxDecoration(
-              color: (iconColor ?? textMuted).withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(8),
+              color: (iconColor ?? c.muted).withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: iconColor ?? textMuted, size: 16),
+            child: Icon(icon, color: iconColor ?? c.muted, size: 16),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title,
-                    style: const TextStyle(
-                        color: textPrimary, fontSize: 14)),
-                Text(subtitle,
-                    style: const TextStyle(
-                        color: textMuted, fontSize: 12)),
+                Text(title, style: TextStyle(color: c.text, fontSize: 14, fontWeight: FontWeight.w500)),
+                Text(subtitle, style: TextStyle(color: c.muted, fontSize: 12)),
               ],
             ),
           ),
           Switch(
             value: value,
             onChanged: onChanged,
-            activeThumbColor: teal,
-            activeTrackColor: teal.withValues(alpha: 0.3),
-            inactiveTrackColor: Colors.white.withValues(alpha: 0.08),
-            inactiveThumbColor: textMuted,
+            activeColor: teal,
           ),
         ],
       ),
@@ -1346,17 +1360,25 @@ class _SettingsScreenState extends State<SettingsScreen>
     return ListTile(
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      leading: Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.07),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, color: textMuted, size: 16),
-      ),
-      title:
-          Text(title, style: const TextStyle(color: textPrimary)),
-      trailing: const Icon(Icons.chevron_right, color: textMuted),
+      leading: Builder(builder: (ctx) {
+        final c = AppColors.of(ctx);
+        return Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            color: c.muted.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: c.muted, size: 16),
+        );
+      }),
+      title: Builder(builder: (ctx) {
+        final c = AppColors.of(ctx);
+        return Text(title, style: TextStyle(color: c.text, fontWeight: FontWeight.w500));
+      }),
+      trailing: Builder(builder: (ctx) {
+        final c = AppColors.of(ctx);
+        return Icon(Icons.chevron_right, color: c.muted);
+      }),
       onTap: onTap,
     );
   }
