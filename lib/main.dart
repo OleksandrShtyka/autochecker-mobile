@@ -8,6 +8,7 @@ import 'services/ai_analysis_service.dart';
 import 'services/connectivity_service.dart';
 import 'services/exp_service.dart';
 import 'services/locale_service.dart';
+import 'services/nutrition_service.dart';
 import 'services/theme_service.dart';
 import 'theme.dart';
 
@@ -21,6 +22,7 @@ void main() async {
   await ThemeService.instance.init();
   await ExpService.instance.init();
   await AchievementsService.instance.init();
+  await NutritionService.instance.init();
   ConnectivityService.instance.startMonitoring();
 
   runApp(const GymTrackerApp());
