@@ -125,6 +125,7 @@ class _AiPanelState extends State<AiPanel> {
 
     try {
       final history = _messages
+          .where((m) => m.role == 'user' || m.role == 'assistant')
           .map((m) => {'role': m.role, 'content': m.content})
           .toList();
       final reply = await ApiService.instance.sendAiMessage(

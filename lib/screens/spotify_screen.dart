@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../l10n/strings.dart';
+import '../services/achievements_service.dart';
 import '../services/api_service.dart';
+import '../services/exp_service.dart';
 import '../services/spotify_service.dart';
 import '../theme.dart';
 import '../widgets/animated_background.dart';
+import '../widgets/glass_card.dart';
 import 'spotify_auth_screen.dart';
 
 const _spotifyGreen = Color(0xFF1DB954);
@@ -52,10 +56,21 @@ class SpotifyScreenState extends State<SpotifyScreen> {
     if (mounted) setState(() => _acting = false);
   }
 
+  void _openAiPlaylist() {
+    HapticFeedback.mediumImpact();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _AiPlaylistSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final c = AppColors.of(context);
     return Scaffold(
-      backgroundColor: bgColor,
+      backgroundColor: c.bg,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -64,8 +79,8 @@ class SpotifyScreenState extends State<SpotifyScreen> {
             child: ValueListenableBuilder<SpotifyTrack?>(
               valueListenable: SpotifyService.instance.currentTrack,
               builder: (_, track, __) => track == null
-                  ? _buildConnect()
-                  : _buildPlayer(track),
+                  ? _buildConnect(c)
+                  : _buildPlayer(track, c),
             ),
           ),
         ],
@@ -74,7 +89,7 @@ class SpotifyScreenState extends State<SpotifyScreen> {
   }
 
   // ── Not connected / nothing playing ────────────────────────────────────────
-  Widget _buildConnect() {
+  Widget _buildConnect(AppColors c) {
     return FutureBuilder<bool>(
       future: SpotifyService.instance.isConnected,
       builder: (_, snap) {
@@ -105,10 +120,10 @@ class SpotifyScreenState extends State<SpotifyScreen> {
                       color: _spotifyGreen, size: 48),
                 ),
                 const SizedBox(height: 24),
-                const Text(
+                Text(
                   'Spotify',
                   style: TextStyle(
-                      color: textPrimary,
+                      color: c.text,
                       fontSize: 28,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.5),
@@ -119,7 +134,7 @@ class SpotifyScreenState extends State<SpotifyScreen> {
                       ? t('spotify_nothing_playing')
                       : t('spotify_connect_sub'),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: textMuted, fontSize: 14),
+                  style: TextStyle(color: c.muted, fontSize: 14),
                 ),
                 const SizedBox(height: 32),
                 if (!connected)
@@ -163,6 +178,10 @@ class SpotifyScreenState extends State<SpotifyScreen> {
                             ),
                     ),
                   ),
+                if (connected) ...[
+                  const SizedBox(height: 16),
+                  _aiPlaylistBtn(c),
+                ],
               ],
             ),
           ),
@@ -172,7 +191,7 @@ class SpotifyScreenState extends State<SpotifyScreen> {
   }
 
   // ── Full player ────────────────────────────────────────────────────────────
-  Widget _buildPlayer(SpotifyTrack track) {
+  Widget _buildPlayer(SpotifyTrack track, AppColors c) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 40),
       children: [
@@ -203,12 +222,9 @@ class SpotifyScreenState extends State<SpotifyScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 6,
-                    height: 6,
+                    width: 6, height: 6,
                     decoration: const BoxDecoration(
-                      color: _spotifyGreen,
-                      shape: BoxShape.circle,
-                    ),
+                        color: _spotifyGreen, shape: BoxShape.circle),
                   ),
                   const SizedBox(width: 5),
                   Text(
@@ -235,7 +251,7 @@ class SpotifyScreenState extends State<SpotifyScreen> {
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                color: const Color(0xFF1A2B40),
+                color: c.surface,
                 boxShadow: [
                   BoxShadow(
                     color: _spotifyGreen.withValues(alpha: 0.3),
@@ -260,8 +276,8 @@ class SpotifyScreenState extends State<SpotifyScreen> {
           children: [
             Text(
               track.title,
-              style: const TextStyle(
-                color: textPrimary,
+              style: TextStyle(
+                color: c.text,
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.5,
@@ -273,7 +289,7 @@ class SpotifyScreenState extends State<SpotifyScreen> {
             const SizedBox(height: 4),
             Text(
               track.artist,
-              style: const TextStyle(color: textMuted, fontSize: 15),
+              style: TextStyle(color: c.muted, fontSize: 15),
               textAlign: TextAlign.center,
             ),
           ],
@@ -282,7 +298,7 @@ class SpotifyScreenState extends State<SpotifyScreen> {
 
         // Progress bar
         if (track.durationMs > 0) ...[
-          _ProgressBar(track: track),
+          _ProgressBar(track: track, c: c),
           const SizedBox(height: 28),
         ],
 
@@ -291,23 +307,17 @@ class SpotifyScreenState extends State<SpotifyScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _ctrl(
-              icon: Icons.skip_previous_rounded,
-              size: 40,
-              onTap: () => _do(SpotifyService.instance.previous),
-            ),
+            _ctrl(Icons.skip_previous_rounded, 40,
+                () => _do(SpotifyService.instance.previous), c),
             GestureDetector(
               onTap: _acting
                   ? null
-                  : () => _do(
-                        track.isPlaying
-                            ? SpotifyService.instance.pause
-                            : SpotifyService.instance.play,
-                      ),
+                  : () => _do(track.isPlaying
+                      ? SpotifyService.instance.pause
+                      : SpotifyService.instance.play),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                width: 72,
-                height: 72,
+                width: 72, height: 72,
                 decoration: BoxDecoration(
                   color: _acting
                       ? _spotifyGreen.withValues(alpha: 0.6)
@@ -332,44 +342,470 @@ class SpotifyScreenState extends State<SpotifyScreen> {
                 ),
               ),
             ),
-            _ctrl(
-              icon: Icons.skip_next_rounded,
-              size: 40,
-              onTap: () => _do(SpotifyService.instance.next),
-            ),
+            _ctrl(Icons.skip_next_rounded, 40,
+                () => _do(SpotifyService.instance.next), c),
           ],
         ),
+
+        const SizedBox(height: 32),
+
+        // ── AI Playlist button ──────────────────────────────────────────────
+        _aiPlaylistBtn(c),
       ],
     );
   }
 
-  Widget _ctrl({
-    required IconData icon,
-    required double size,
-    required VoidCallback onTap,
-  }) {
+  Widget _aiPlaylistBtn(AppColors c) {
+    return GestureDetector(
+      onTap: _openAiPlaylist,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 15),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF1DB954), Color(0xFF00E5CC)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: _spotifyGreen.withValues(alpha: 0.35),
+              blurRadius: 20,
+              spreadRadius: -4,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('🎵', style: TextStyle(fontSize: 18)),
+            SizedBox(width: 10),
+            Text(
+              'Generate AI Playlist',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _ctrl(IconData icon, double size, VoidCallback onTap, AppColors c) {
     return GestureDetector(
       onTap: _acting ? null : onTap,
       child: Container(
-        width: 52,
-        height: 52,
+        width: 52, height: 52,
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
+          color: c.isDark
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.black.withValues(alpha: 0.05),
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          border: Border.all(
+              color: c.isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.06)),
         ),
         child: Icon(icon,
-            color: _acting ? textMuted : textPrimary, size: size),
+            color: _acting ? c.muted : c.text, size: size),
+      ),
+    );
+  }
+}
+
+// ── AI Playlist bottom sheet ───────────────────────────────────────────────────
+class _AiPlaylistSheet extends StatefulWidget {
+  const _AiPlaylistSheet();
+
+  @override
+  State<_AiPlaylistSheet> createState() => _AiPlaylistSheetState();
+}
+
+class _AiPlaylistSheetState extends State<_AiPlaylistSheet> {
+  final _ctrl = TextEditingController();
+  final Set<String> _selectedTags = {};
+  bool _loading = false;
+  List<Map<String, dynamic>> _tracks = [];
+  String? _error;
+
+  static const _tags = [
+    ('🏋️ Gym', 'heavy gym workout music'),
+    ('⚡ Hype', 'high energy hype music'),
+    ('🧘 Chill', 'chill relaxing music'),
+    ('🎯 Focus', 'focus concentration music'),
+    ('🔥 Cardio', 'fast cardio running music'),
+    ('😌 Recovery', 'calm recovery stretching music'),
+    ('🎉 Party', 'party dance music'),
+    ('😴 Sleep', 'calm sleep music'),
+  ];
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _generate() async {
+    final text = _ctrl.text.trim();
+    final tags = _selectedTags.join(', ');
+    final prompt = [
+      if (text.isNotEmpty) text,
+      if (tags.isNotEmpty) tags,
+    ].join(' + ');
+
+    if (prompt.isEmpty) return;
+
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _loading = true;
+      _tracks = [];
+      _error = null;
+    });
+
+    try {
+      final tracks = await SpotifyService.instance.aiPlaylist(prompt);
+      if (mounted) {
+        setState(() {
+          _tracks = tracks;
+          _loading = false;
+        });
+        await AchievementsService.instance.onSpotifyAiUsed();
+        await ExpService.instance.earn(ExpReward.voiceAi);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Could not generate playlist. Check connection.';
+          _loading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _playTrack(Map<String, dynamic> track) async {
+    final uri = track['uri'] as String?;
+    if (uri == null) return;
+    HapticFeedback.selectionClick();
+    await SpotifyService.instance.playUri(uri);
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AppColors.of(context);
+    final bottomPad = MediaQuery.of(context).padding.bottom;
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      padding: EdgeInsets.fromLTRB(20, 16, 20, 16 + bottomPad),
+      decoration: BoxDecoration(
+        color: c.isDark ? const Color(0xFF0D0D1F) : Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: c.isDark
+              ? Colors.white.withValues(alpha: 0.10)
+              : Colors.black.withValues(alpha: 0.06),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: _spotifyGreen.withValues(alpha: 0.15),
+            blurRadius: 40,
+            spreadRadius: -10,
+          ),
+        ],
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: c.isDark
+                      ? Colors.white.withValues(alpha: 0.18)
+                      : Colors.black.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Title
+            Row(
+              children: [
+                Container(
+                  width: 36, height: 36,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF1DB954), Color(0xFF00E5CC)],
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.auto_awesome_rounded,
+                      color: Colors.white, size: 18),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('AI Playlist',
+                        style: TextStyle(
+                            color: c.text,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.3)),
+                    Text('Describe your vibe',
+                        style: TextStyle(color: c.muted, fontSize: 12)),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Tags
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _tags.map((tag) {
+                final (label, value) = tag;
+                final selected = _selectedTags.contains(value);
+                return GestureDetector(
+                  onTap: () => setState(() {
+                    if (selected) {
+                      _selectedTags.remove(value);
+                    } else {
+                      _selectedTags.add(value);
+                    }
+                  }),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? _spotifyGreen.withValues(alpha: 0.18)
+                          : (c.isDark
+                              ? Colors.white.withValues(alpha: 0.07)
+                              : Colors.black.withValues(alpha: 0.05)),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: selected
+                            ? _spotifyGreen.withValues(alpha: 0.5)
+                            : c.border,
+                      ),
+                    ),
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        color: selected ? _spotifyGreen : c.muted,
+                        fontSize: 12,
+                        fontWeight: selected
+                            ? FontWeight.w700
+                            : FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 14),
+
+            // Free text input
+            Container(
+              decoration: BoxDecoration(
+                color: c.inputFill,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: c.border),
+              ),
+              child: TextField(
+                controller: _ctrl,
+                style: TextStyle(color: c.text, fontSize: 14),
+                maxLines: 2,
+                minLines: 1,
+                decoration: InputDecoration(
+                  hintText:
+                      'e.g. "heavy metal for bench press" or "lo-fi for stretching"',
+                  hintStyle:
+                      TextStyle(color: c.muted, fontSize: 13),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Generate button
+            GestureDetector(
+              onTap: _loading ? null : _generate,
+              child: Container(
+                width: double.infinity,
+                height: 52,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1DB954), Color(0xFF00E5CC)],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: _spotifyGreen.withValues(alpha: 0.35),
+                      blurRadius: 16,
+                      spreadRadius: -4,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: _loading
+                      ? const SizedBox(
+                          width: 22, height: 22,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
+                      : const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.auto_awesome_rounded,
+                                color: Colors.white, size: 18),
+                            SizedBox(width: 8),
+                            Text('Generate Playlist',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800)),
+                          ],
+                        ),
+                ),
+              ),
+            ),
+
+            // Error
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(_error!,
+                  style: const TextStyle(
+                      color: Color(0xFFEF4444), fontSize: 13)),
+            ],
+
+            // Track results
+            if (_tracks.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text('${_tracks.length} tracks found',
+                  style: TextStyle(
+                      color: c.muted,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              ..._tracks.map((track) => _TrackRow(
+                    track: track,
+                    c: c,
+                    onPlay: () => _playTrack(track),
+                  )),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Track row ─────────────────────────────────────────────────────────────────
+class _TrackRow extends StatelessWidget {
+  final Map<String, dynamic> track;
+  final AppColors c;
+  final VoidCallback onPlay;
+
+  const _TrackRow({
+    required this.track,
+    required this.c,
+    required this.onPlay,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final name = track['name'] as String? ?? 'Unknown';
+    final artists = (track['artists'] as List?)
+            ?.map((a) => a['name'] as String? ?? '')
+            .join(', ') ??
+        '';
+    final images = track['album']?['images'] as List?;
+    final artUrl = (images != null && images.isNotEmpty)
+        ? images.last['url'] as String?
+        : null;
+
+    return GestureDetector(
+      onTap: onPlay,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: c.isDark
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.black.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: c.border),
+        ),
+        child: Row(
+          children: [
+            // Album art
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: artUrl != null
+                  ? Image.network(artUrl,
+                      width: 44, height: 44, fit: BoxFit.cover)
+                  : Container(
+                      width: 44, height: 44,
+                      color: _spotifyGreen.withValues(alpha: 0.12),
+                      child: const Icon(Icons.music_note_rounded,
+                          color: _spotifyGreen, size: 20)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(name,
+                      style: TextStyle(
+                          color: c.text,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 2),
+                  Text(artists,
+                      style: TextStyle(color: c.muted, fontSize: 11),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              width: 36, height: 36,
+              decoration: const BoxDecoration(
+                  color: _spotifyGreen, shape: BoxShape.circle),
+              child: const Icon(Icons.play_arrow_rounded,
+                  color: Colors.white, size: 20),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 // ── Progress bar ──────────────────────────────────────────────────────────────
-
 class _ProgressBar extends StatelessWidget {
   final SpotifyTrack track;
-  const _ProgressBar({required this.track});
+  final AppColors c;
+  const _ProgressBar({required this.track, required this.c});
 
   String _fmt(int ms) {
     final s = ms ~/ 1000;
@@ -388,7 +824,9 @@ class _ProgressBar extends StatelessWidget {
             duration: const Duration(milliseconds: 500),
             builder: (_, v, __) => LinearProgressIndicator(
               value: v,
-              backgroundColor: Colors.white.withValues(alpha: 0.08),
+              backgroundColor: c.isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.08),
               valueColor:
                   const AlwaysStoppedAnimation<Color>(_spotifyGreen),
               minHeight: 4,
@@ -400,9 +838,9 @@ class _ProgressBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(_fmt(track.progressMs),
-                style: const TextStyle(color: textMuted, fontSize: 11)),
+                style: TextStyle(color: c.muted, fontSize: 11)),
             Text(_fmt(track.durationMs),
-                style: const TextStyle(color: textMuted, fontSize: 11)),
+                style: TextStyle(color: c.muted, fontSize: 11)),
           ],
         ),
       ],
