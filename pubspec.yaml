@@ -2,7 +2,7 @@ name: autochecker_mobile
 description: "GYM Tracker — your personal fitness companion app."
 publish_to: 'none'
 
-version: 3.2.3+19
+version: 3.2.3+20
 
 environment:
   sdk: ^3.11.1

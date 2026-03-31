@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:ui';
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -11,6 +11,7 @@ import '../services/bluetooth_service.dart' as bt_svc;
 import '../services/connectivity_service.dart';
 import '../services/exp_service.dart';
 import '../services/locale_service.dart';
+import '../services/nutrition_service.dart';
 import '../services/spotify_service.dart';
 import '../services/update_service.dart';
 import '../theme.dart';
@@ -435,168 +436,109 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(50),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(50),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(50),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, color: Colors.white, size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  // ── Glass AppBar — new design ──────────────────────────────────────────────
+  // ── Calz AppBar — clean minimal ───────────────────────────────────────────
   PreferredSize _buildGlassAppBar() {
     final c = AppColors.of(context);
     return PreferredSize(
       preferredSize: const Size.fromHeight(64),
-      child: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
-          child: Container(
-            decoration: BoxDecoration(
-              color: c.isDark
-                  ? const Color(0xFF08080F).withValues(alpha: 0.80)
-                  : Colors.white.withValues(alpha: 0.85),
-              border: Border(
-                bottom: BorderSide(
-                  color: c.isDark
-                      ? Colors.white.withValues(alpha: 0.06)
-                      : Colors.black.withValues(alpha: 0.05),
-                ),
-              ),
-            ),
-            child: SafeArea(
-              bottom: false,
-              child: SizedBox(
-                height: 64,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // ── Logo icon + brand ──────────────────────────────
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF00E5CC), Color(0xFF4361EE)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: teal.withValues(alpha: 0.40),
-                              blurRadius: 14,
-                              spreadRadius: -3,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                        ),
-                        alignment: Alignment.center,
-                        child: const Icon(
-                          Icons.fitness_center_rounded,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'GYM',
-                        style: TextStyle(
-                          color: c.text,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -1.0,
-                        ),
-                      ),
-                      const Spacer(),
+      child: Container(
+        decoration: BoxDecoration(
+          color: c.bg,
+          border: Border(
+            bottom: BorderSide(color: c.border, width: 0.8),
+          ),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: SizedBox(
+            height: 64,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // ── Logo icon + brand ──────────────────────────────
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: teal,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.fitness_center_rounded,
+                      color: Colors.white,
+                      size: 17,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'GymTracker',
+                    style: TextStyle(
+                      color: c.text,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const Spacer(),
 
-                      // ── Action pill (mic, health, music) ──────────────
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(50),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 4, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: c.isDark
-                                  ? Colors.white.withValues(alpha: 0.07)
-                                  : Colors.black.withValues(alpha: 0.04),
-                              borderRadius: BorderRadius.circular(50),
-                              border: Border.all(
-                                color: c.isDark
-                                    ? Colors.white.withValues(alpha: 0.10)
-                                    : Colors.black.withValues(alpha: 0.06),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                _appBarIcon(
-                                  icon: Icons.mic_rounded,
-                                  color: teal,
-                                  onTap: () async {
-                                    final logged =
-                                        await showVoiceActionPanel(context);
-                                    if (logged && mounted) {
-                                      setState(() => _tab = 2);
-                                    }
-                                  },
-                                ),
-                                _appBarDivider(c),
-                                _appBarIcon(
-                                  icon: Icons.favorite_rounded,
-                                  color: const Color(0xFFEF4444),
-                                  onTap: () => Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                        builder: (_) => const HealthScreen()),
-                                  ),
-                                ),
-                                _appBarDivider(c),
-                                _appBarIcon(
-                                  icon: Icons.music_note_rounded,
-                                  color: const Color(0xFF1DB954),
-                                  onTap: () => Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                        builder: (_) => const SpotifyScreen()),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
+                  // ── Action icons ──────────────────────────────────────
+                  _appBarIcon(
+                    icon: Icons.mic_rounded,
+                    color: teal,
+                    onTap: () async {
+                      final logged = await showVoiceActionPanel(context);
+                      if (logged && mounted) setState(() => _tab = 2);
+                    },
+                  ),
+                  const SizedBox(width: 4),
+                  _appBarIcon(
+                    icon: Icons.favorite_rounded,
+                    color: const Color(0xFFEF4444),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const HealthScreen()),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  _appBarIcon(
+                    icon: Icons.music_note_rounded,
+                    color: const Color(0xFF1DB954),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SpotifyScreen()),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
 
-                      const SizedBox(width: 10),
-
-                      // ── Avatar circle ─────────────────────────────────
-                      GestureDetector(
+                  // ── Avatar circle ─────────────────────────────────
+                  GestureDetector(
                         onTap: () => setState(() => _tab = 5),
                         child: Stack(
                           clipBehavior: Clip.none,
@@ -604,30 +546,16 @@ class _HomeScreenState extends State<HomeScreen>
                             Container(
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                gradient: _btConnected
-                                    ? LinearGradient(colors: [
-                                        teal.withValues(alpha: 0.6),
-                                        blue.withValues(alpha: 0.4),
-                                      ])
-                                    : null,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: teal.withValues(
-                                        alpha: _btConnected ? 0.40 : 0.20),
-                                    blurRadius: 12,
-                                    spreadRadius: -2,
-                                  ),
-                                ],
                                 border: Border.all(
                                   color: _btConnected
-                                      ? teal.withValues(alpha: 0.6)
-                                      : teal.withValues(alpha: 0.3),
+                                      ? teal
+                                      : teal.withValues(alpha: 0.35),
                                   width: 1.5,
                                 ),
                               ),
                               child: CircleAvatar(
                                 radius: 17,
-                                backgroundColor: const Color(0xFF13131F),
+                                backgroundColor: teal.withValues(alpha: 0.12),
                                 backgroundImage: (_avatarUrl != null &&
                                         _avatarUrl!.isNotEmpty)
                                     ? NetworkImage(_avatarUrl!)
@@ -663,7 +591,7 @@ class _HomeScreenState extends State<HomeScreen>
                                             : const Color(0xFF22C55E),
                                     borderRadius: BorderRadius.circular(7),
                                     border: Border.all(
-                                        color: const Color(0xFF08080F),
+                                        color: const Color(0xFF1C1917),
                                         width: 1.5),
                                   ),
                                   child: Text(
@@ -695,72 +623,50 @@ class _HomeScreenState extends State<HomeScreen>
     required Color color,
     required VoidCallback onTap,
   }) {
+    final c = AppColors.of(context);
     return GestureDetector(
       onTap: onTap,
-      child: SizedBox(
-        width: 34,
-        height: 34,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: c.border, width: 0.8),
+        ),
+        alignment: Alignment.center,
         child: Icon(icon, color: color, size: 16),
       ),
     );
   }
 
-  Widget _appBarDivider(AppColors c) {
-    return Container(
-      width: 1,
-      height: 16,
-      color: c.isDark
-          ? Colors.white.withValues(alpha: 0.10)
-          : Colors.black.withValues(alpha: 0.08),
-    );
-  }
-
-  // ── Floating Pill Bottom Bar ───────────────────────────────────────────────
+  // ── Calz BottomBar — clean solid pill ─────────────────────────────────────
   Widget _buildGlassBottomBar(double bottomPad) {
-    final safeBottom = bottomPad > 0 ? bottomPad : 16.0;
+    final safeBottom = bottomPad > 0 ? bottomPad : 8.0;
     final c = AppColors.of(context);
 
     return Padding(
       padding: EdgeInsets.only(
-        bottom: safeBottom + 16,
-        left: 24,
-        right: 24,
+        bottom: safeBottom + 10,
+        left: 20,
+        right: 20,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(50),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
-          child: Container(
-            height: 64,
-            decoration: BoxDecoration(
-              color: c.isDark
-                  ? const Color(0xFF13131F).withValues(alpha: 0.90)
-                  : Colors.white.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(50),
-              border: Border.all(
-                color: c.isDark
-                    ? Colors.white.withValues(alpha: 0.10)
-                    : Colors.black.withValues(alpha: 0.06),
-                width: 1,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: teal.withValues(alpha: c.isDark ? 0.15 : 0.08),
-                  blurRadius: 32,
-                  spreadRadius: -4,
-                  offset: const Offset(0, 4),
-                ),
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.20),
-                  blurRadius: 20,
-                  spreadRadius: -6,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+      child: Container(
+        height: 66,
+        decoration: BoxDecoration(
+          color: c.surface,
+          borderRadius: BorderRadius.circular(50),
+          border: Border.all(color: c.border, width: 0.8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: c.isDark ? 0.40 : 0.10),
+              blurRadius: 24,
+              spreadRadius: -4,
+              offset: const Offset(0, 8),
             ),
-            child: _buildNavRow(c),
-          ),
+          ],
         ),
+        child: _buildNavRow(c),
       ),
     );
   }
@@ -796,54 +702,33 @@ class _HomeScreenState extends State<HomeScreen>
             _toggleAi();
           },
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
+            duration: const Duration(milliseconds: 220),
             curve: Curves.easeOutCubic,
-            margin: const EdgeInsets.symmetric(horizontal: 4),
+            margin: const EdgeInsets.symmetric(horizontal: 2),
             width: 52,
             height: 52,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: _aiOpen
-                  ? const LinearGradient(
-                      colors: [Color(0xFF00E5CC), Color(0xFF4361EE)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    )
-                  : LinearGradient(
-                      colors: [
-                        teal.withValues(alpha: 0.18),
-                        blue.withValues(alpha: 0.12),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
+              color: _aiOpen ? teal : teal.withValues(alpha: 0.12),
               border: Border.all(
-                color: _aiOpen
-                    ? teal.withValues(alpha: 0.8)
-                    : teal.withValues(alpha: 0.30),
+                color: _aiOpen ? teal : teal.withValues(alpha: 0.35),
                 width: 1.5,
               ),
               boxShadow: _aiOpen
                   ? [
                       BoxShadow(
-                        color: teal.withValues(alpha: 0.45),
-                        blurRadius: 24,
+                        color: teal.withValues(alpha: 0.40),
+                        blurRadius: 18,
                         spreadRadius: -4,
                         offset: const Offset(0, 4),
                       ),
                     ]
-                  : [
-                      BoxShadow(
-                        color: teal.withValues(alpha: 0.14),
-                        blurRadius: 12,
-                        spreadRadius: -4,
-                      ),
-                    ],
+                  : null,
             ),
             child: Icon(
               Icons.auto_awesome_rounded,
               color: _aiOpen ? Colors.white : teal,
-              size: 22,
+              size: 21,
             ),
           ),
         ),
@@ -857,13 +742,11 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  // ── Nav item — new pill style ──────────────────────────────────────────────
+  // ── Nav item — Calz clean style ────────────────────────────────────────────
   Widget _navItem(int i, IconData activeIcon, IconData inactiveIcon,
       String label, AppColors c) {
     final active = _tab == i;
-    final inactiveColor = c.isDark
-        ? Colors.white.withValues(alpha: 0.38)
-        : Colors.black.withValues(alpha: 0.32);
+    final inactiveColor = c.muted;
 
     return GestureDetector(
       onTap: () {
@@ -876,39 +759,38 @@ class _HomeScreenState extends State<HomeScreen>
       },
       behavior: HitTestBehavior.opaque,
       child: Center(
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 280),
-          curve: Curves.easeOutBack,
-          width: 36,
-          height: 36,
-          decoration: active
-              ? BoxDecoration(
-                  color: teal,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: teal.withValues(alpha: 0.40),
-                      blurRadius: 16,
-                      spreadRadius: -4,
-                    ),
-                  ],
-                )
-              : const BoxDecoration(shape: BoxShape.circle),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 220),
-            transitionBuilder: (child, anim) => ScaleTransition(
-              scale: Tween<double>(begin: 0.65, end: 1.0).animate(
-                CurvedAnimation(parent: anim, curve: Curves.easeOutBack),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 240),
+              curve: Curves.easeOutCubic,
+              width: 38,
+              height: 30,
+              decoration: active
+                  ? BoxDecoration(
+                      color: teal.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(10),
+                    )
+                  : const BoxDecoration(),
+              child: Icon(
+                active ? activeIcon : inactiveIcon,
+                color: active ? teal : inactiveColor,
+                size: 19,
               ),
-              child: child,
             ),
-            child: Icon(
-              active ? activeIcon : inactiveIcon,
-              key: ValueKey(active ? 'a$i' : 'n$i'),
-              color: active ? Colors.white : inactiveColor,
-              size: 20,
+            const SizedBox(height: 2),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
+              style: TextStyle(
+                color: active ? teal : inactiveColor,
+                fontSize: 9,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+              ),
+              child: Text(label, maxLines: 1, overflow: TextOverflow.clip),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -980,14 +862,27 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ),
 
-          // ── ROI stat cards (3 colorful) ──────────────────────────────────
+          // ── Today's nutrition card (Calz hero) ───────────────────────────
+          AnimatedOpacity(
+            opacity: _entered ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 420),
+            child: AnimatedSlide(
+              offset: _entered ? Offset.zero : const Offset(0, 0.06),
+              duration: const Duration(milliseconds: 420),
+              curve: Curves.easeOutCubic,
+              child: _buildTodayNutritionCard(c),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── ROI stat cards ────────────────────────────────────────────────
           if (_roi != null) ...[
             AnimatedOpacity(
               opacity: _entered ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 500),
+              duration: const Duration(milliseconds: 480),
               child: AnimatedSlide(
-                offset: _entered ? Offset.zero : const Offset(0, 0.08),
-                duration: const Duration(milliseconds: 500),
+                offset: _entered ? Offset.zero : const Offset(0, 0.06),
+                duration: const Duration(milliseconds: 480),
                 curve: Curves.easeOutCubic,
                 child: _buildRoiRow(_roi!, c),
               ),
@@ -998,10 +893,10 @@ class _HomeScreenState extends State<HomeScreen>
           // ── EXP level card ───────────────────────────────────────────────
           AnimatedOpacity(
             opacity: _entered ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 540),
+            duration: const Duration(milliseconds: 520),
             child: AnimatedSlide(
-              offset: _entered ? Offset.zero : const Offset(0, 0.08),
-              duration: const Duration(milliseconds: 540),
+              offset: _entered ? Offset.zero : const Offset(0, 0.06),
+              duration: const Duration(milliseconds: 520),
               curve: Curves.easeOutCubic,
               child: _buildExpCard(c),
             ),
@@ -1011,10 +906,10 @@ class _HomeScreenState extends State<HomeScreen>
           // ── Quick actions row ─────────────────────────────────────────────
           AnimatedOpacity(
             opacity: _entered ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 560),
+            duration: const Duration(milliseconds: 550),
             child: AnimatedSlide(
-              offset: _entered ? Offset.zero : const Offset(0, 0.08),
-              duration: const Duration(milliseconds: 560),
+              offset: _entered ? Offset.zero : const Offset(0, 0.06),
+              duration: const Duration(milliseconds: 550),
               curve: Curves.easeOutCubic,
               child: _buildQuickActions(c),
             ),
@@ -1024,16 +919,151 @@ class _HomeScreenState extends State<HomeScreen>
           // ── Profile config card ──────────────────────────────────────────
           AnimatedOpacity(
             opacity: _entered ? 1.0 : 0.0,
-            duration: const Duration(milliseconds: 600),
+            duration: const Duration(milliseconds: 580),
             child: AnimatedSlide(
-              offset: _entered ? Offset.zero : const Offset(0, 0.08),
-              duration: const Duration(milliseconds: 600),
+              offset: _entered ? Offset.zero : const Offset(0, 0.06),
+              duration: const Duration(milliseconds: 580),
               curve: Curves.easeOutCubic,
               child: _buildProfileCard(c),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  // ── Today's nutrition hero card (Calz style) ─────────────────────────────
+  Widget _buildTodayNutritionCard(AppColors c) {
+    return ValueListenableBuilder<List<NutritionEntry>>(
+      valueListenable: NutritionService.instance.entries,
+      builder: (_, __, ___) {
+        final totals = NutritionService.instance.totalsForDate(DateTime.now());
+        final goals = NutritionService.instance.goals.value;
+        final calProgress = goals.calories > 0
+            ? (totals.cal / goals.calories).clamp(0.0, 1.0)
+            : 0.0;
+        final remaining = goals.calories - totals.cal;
+
+        return GestureDetector(
+          onTap: () => setState(() => _tab = 4),
+          child: Container(
+            decoration: c.cardDecoration,
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                // Calorie ring
+                SizedBox(
+                  width: 80,
+                  height: 80,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CustomPaint(
+                        size: const Size(80, 80),
+                        painter: _DashboardRingPainter(
+                          progress: calProgress,
+                          color: teal,
+                          bg: c.border,
+                        ),
+                      ),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${totals.cal}',
+                            style: TextStyle(
+                              color: c.text,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                          Text(
+                            'kcal',
+                            style: TextStyle(
+                              color: c.muted,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Today\'s Nutrition',
+                        style: TextStyle(
+                          color: c.text,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        remaining > 0
+                            ? '$remaining kcal remaining'
+                            : 'Goal reached!',
+                        style: TextStyle(
+                          color: remaining > 0 ? c.muted : teal,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _macroRow('Protein', totals.protein, goals.protein.toDouble(),
+                          macroProtein, c),
+                      const SizedBox(height: 6),
+                      _macroRow('Carbs', totals.carbs, goals.carbs.toDouble(),
+                          macroCarbs, c),
+                      const SizedBox(height: 6),
+                      _macroRow('Fat', totals.fat, goals.fat.toDouble(),
+                          macroFat, c),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: c.muted, size: 20),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _macroRow(String label, double val, double goal, Color color, AppColors c) {
+    final progress = goal > 0 ? (val / goal).clamp(0.0, 1.0) : 0.0;
+    return Row(
+      children: [
+        SizedBox(
+          width: 42,
+          child: Text(
+            label,
+            style: TextStyle(color: c.muted, fontSize: 10, fontWeight: FontWeight.w600),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 5,
+              backgroundColor: color.withValues(alpha: 0.12),
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          '${val.round()}g',
+          style: TextStyle(color: c.text, fontSize: 10, fontWeight: FontWeight.w700),
+        ),
+      ],
     );
   }
 
@@ -1058,17 +1088,13 @@ class _HomeScreenState extends State<HomeScreen>
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF00E5CC), Color(0xFF4361EE)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(16),
+                    color: teal,
+                    borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: teal.withValues(alpha: 0.35),
-                        blurRadius: 14,
-                        spreadRadius: -4,
+                        color: teal.withValues(alpha: 0.30),
+                        blurRadius: 12,
+                        spreadRadius: -3,
                       ),
                     ],
                   ),
@@ -1215,12 +1241,7 @@ class _HomeScreenState extends State<HomeScreen>
             value: '${roi.sessionsCount}',
             label: t('sessions_month'),
             icon: Icons.calendar_month_rounded,
-            gradient: const LinearGradient(
-              colors: [Color(0xFF00E5CC), Color(0xFF00B4A0)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            glowColor: teal,
+            color: teal,
             c: c,
           ),
         ),
@@ -1230,12 +1251,7 @@ class _HomeScreenState extends State<HomeScreen>
             value: '\$${roi.monthlyCost.toStringAsFixed(0)}',
             label: t('gym_cost'),
             icon: Icons.credit_card_rounded,
-            gradient: const LinearGradient(
-              colors: [Color(0xFF4361EE), Color(0xFF7B2FBE)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            glowColor: blue,
+            color: blue,
             c: c,
           ),
         ),
@@ -1245,12 +1261,7 @@ class _HomeScreenState extends State<HomeScreen>
             value: '\$${roi.costPerSession.toStringAsFixed(2)}',
             label: t('cost_per_session'),
             icon: Icons.trending_down_rounded,
-            gradient: const LinearGradient(
-              colors: [Color(0xFFFF6B35), Color(0xFFE11D48)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            glowColor: const Color(0xFFFF6B35),
+            color: macroProtein,
             c: c,
           ),
         ),
@@ -1262,51 +1273,41 @@ class _HomeScreenState extends State<HomeScreen>
     required String value,
     required String label,
     required IconData icon,
-    required LinearGradient gradient,
-    required Color glowColor,
+    required Color color,
     required AppColors c,
   }) {
     return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        gradient: gradient,
-        boxShadow: [
-          BoxShadow(
-            color: glowColor.withValues(alpha: c.isDark ? 0.35 : 0.20),
-            blurRadius: 20,
-            spreadRadius: -4,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+      decoration: c.cardDecoration,
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: Colors.white.withValues(alpha: 0.85), size: 18),
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            alignment: Alignment.center,
+            child: Icon(icon, color: color, size: 16),
+          ),
           const SizedBox(height: 10),
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0, end: 1),
-            duration: const Duration(milliseconds: 900),
-            curve: Curves.easeOutCubic,
-            builder: (_, v, child) => Opacity(opacity: v, child: child),
-            child: Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.5,
-              ),
+          Text(
+            value,
+            style: TextStyle(
+              color: c.text,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.5,
             ),
           ),
           const SizedBox(height: 3),
           Text(
             label,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.75),
+              color: c.muted,
               fontSize: 10,
-              letterSpacing: 0.2,
               fontWeight: FontWeight.w500,
             ),
             maxLines: 2,
@@ -1329,15 +1330,11 @@ class _HomeScreenState extends State<HomeScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF00E5CC), Color(0xFF4361EE)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: teal.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.person_outline_rounded,
-                    color: Colors.white, size: 16),
+                    color: teal, size: 16),
               ),
               const SizedBox(width: 10),
               Text(
@@ -1411,22 +1408,13 @@ class _HomeScreenState extends State<HomeScreen>
                 curve: Curves.easeOutCubic,
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 decoration: BoxDecoration(
-                  gradient: _saved
-                      ? const LinearGradient(
-                          colors: [Color(0xFF16A34A), Color(0xFF15803D)])
-                      : const LinearGradient(
-                          colors: [Color(0xFF00E5CC), Color(0xFF4361EE)],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
+                  color: _saved ? const Color(0xFF22C55E) : teal,
                   borderRadius: BorderRadius.circular(28),
                   boxShadow: [
                     BoxShadow(
-                      color: (_saved
-                              ? const Color(0xFF16A34A)
-                              : teal)
-                          .withValues(alpha: 0.35),
-                      blurRadius: 20,
+                      color: (_saved ? const Color(0xFF22C55E) : teal)
+                          .withValues(alpha: 0.30),
+                      blurRadius: 16,
                       spreadRadius: -4,
                       offset: const Offset(0, 6),
                     ),
@@ -1588,14 +1576,8 @@ class _UpdateDialogState extends State<_UpdateDialog>
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: _done
-                                    ? [
-                                        const Color(0xFF22C55E),
-                                        const Color(0xFF16A34A),
-                                      ]
-                                    : [
-                                        const Color(0xFF7B2FBE),
-                                        teal,
-                                      ],
+                                    ? [const Color(0xFF22C55E), const Color(0xFF16A34A)]
+                                    : [teal, const Color(0xFFFF9B6B)],
                               ),
                               boxShadow: [
                                 BoxShadow(
@@ -1705,4 +1687,46 @@ class _UpdateDialogState extends State<_UpdateDialog>
       ),
     );
   }
+}
+
+// ── Dashboard Ring Painter ────────────────────────────────────────────────────
+class _DashboardRingPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+  final Color bg;
+
+  const _DashboardRingPainter({
+    required this.progress,
+    required this.color,
+    required this.bg,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final radius = (size.width - 10) / 2;
+
+    final bgPaint = Paint()
+      ..color = bg
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 7
+      ..strokeCap = StrokeCap.round;
+
+    final fgPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 7
+      ..strokeCap = StrokeCap.round;
+
+    final rect = Rect.fromCircle(center: Offset(cx, cy), radius: radius);
+    canvas.drawArc(rect, -1.57, 6.28, false, bgPaint);
+    if (progress > 0) {
+      canvas.drawArc(rect, -1.57, 6.28 * progress, false, fgPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashboardRingPainter old) =>
+      old.progress != progress || old.color != color;
 }

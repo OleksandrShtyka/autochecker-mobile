@@ -1,74 +1,49 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme.dart';
 
-// ── GlassCard — theme-aware glass/card widget ─────────────────────────────────
+// ── GlassCard — Calz-style clean white card ───────────────────────────────────
 class GlassCard extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
   final double radius;
   final Color? glowColor;
+  // blur param kept for API compat but not used
   final double blur;
 
   const GlassCard({
     super.key,
     required this.child,
     this.padding,
-    this.radius = 28,
+    this.radius = 20,
     this.glowColor,
-    this.blur = 24,
+    this.blur = 0,
   });
 
   @override
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
 
-    Widget inner = Container(
+    final inner = Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: c.isDark ? Colors.white.withValues(alpha: 0.06) : Colors.white,
-        gradient: c.isDark
-            ? LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withValues(alpha: 0.11),
-                  Colors.white.withValues(alpha: 0.04),
-                ],
-              )
-            : null,
+        color: c.cardFill,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(
-          color: c.isDark
-              ? Colors.white.withValues(alpha: 0.10)
-              : c.border,
-          width: 1,
-        ),
-        boxShadow: c.isDark
-            ? null
-            : [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 28,
-                  spreadRadius: -4,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+        border: Border.all(color: c.cardBorder, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: c.isDark
+                ? Colors.black.withValues(alpha: 0.28)
+                : Colors.black.withValues(alpha: 0.06),
+            blurRadius: 16,
+            spreadRadius: -4,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: child,
     );
-
-    if (c.isDark) {
-      inner = ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-          child: inner,
-        ),
-      );
-    }
 
     if (glowColor != null) {
       return Container(
@@ -76,8 +51,8 @@ class GlassCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(radius),
           boxShadow: [
             BoxShadow(
-              color: glowColor!.withValues(alpha: c.isDark ? 0.22 : 0.10),
-              blurRadius: 42,
+              color: glowColor!.withValues(alpha: c.isDark ? 0.20 : 0.12),
+              blurRadius: 32,
               spreadRadius: -8,
             ),
           ],
@@ -99,7 +74,7 @@ class SpringButton extends StatefulWidget {
     super.key,
     required this.child,
     this.onTap,
-    this.pressedScale = 0.93,
+    this.pressedScale = 0.94,
   });
 
   @override
@@ -116,7 +91,7 @@ class _SpringButtonState extends State<SpringButton>
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 120),
+      duration: const Duration(milliseconds: 110),
     );
     _scaleAnim = Tween<double>(begin: 1.0, end: widget.pressedScale).animate(
       CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
@@ -136,14 +111,14 @@ class _SpringButtonState extends State<SpringButton>
 
   void _onTapUp(TapUpDetails _) {
     _ctrl.animateBack(0,
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 280),
         curve: Curves.easeOutBack);
     widget.onTap?.call();
   }
 
   void _onTapCancel() {
     _ctrl.animateBack(0,
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 280),
         curve: Curves.easeOutBack);
   }
 
