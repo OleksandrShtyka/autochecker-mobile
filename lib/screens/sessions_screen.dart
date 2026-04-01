@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
+import '../l10n/strings.dart';
 import '../models/models.dart';
 import '../services/achievements_service.dart';
 import '../services/api_service.dart';
@@ -62,6 +63,7 @@ class SessionsScreenState extends State<SessionsScreen>
     final dateCtrl = TextEditingController(
         text: DateTime.now().toIso8601String().substring(0, 10));
     final durCtrl = TextEditingController(text: '60');
+    final costCtrl = TextEditingController();
     final notesCtrl = TextEditingController();
     final List<Map<String, TextEditingController>> exercises = [];
 
@@ -135,9 +137,9 @@ class SessionsScreenState extends State<SessionsScreen>
                             size: 14),
                       ),
                       const SizedBox(width: 10),
-                      const Text(
-                        'Log Session',
-                        style: TextStyle(
+                      Text(
+                        t('add_session'),
+                        style: const TextStyle(
                             color: textPrimary,
                             fontSize: 17,
                             fontWeight: FontWeight.w700),
@@ -148,18 +150,21 @@ class SessionsScreenState extends State<SessionsScreen>
                       Expanded(child: _field('Date', dateCtrl)),
                       const SizedBox(width: 10),
                       Expanded(
-                          child: _field('Duration (min)', durCtrl,
+                          child: _field(t('duration_min'), durCtrl,
                               numeric: true)),
                     ]),
+                    const SizedBox(height: 10),
+                    _field(t('session_cost'), costCtrl,
+                        numeric: true),
                     const SizedBox(height: 12),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: DropdownButtonFormField<String>(
                         initialValue: selectedType,
-                        dropdownColor: const Color(0xFF0C1525),
+                        dropdownColor: surfaceColor,
                         style: const TextStyle(color: textPrimary),
                         decoration: InputDecoration(
-                          labelText: 'Workout type',
+                          labelText: t('workout_type'),
                           filled: true,
                           fillColor:
                               Colors.white.withValues(alpha: 0.05),
@@ -199,15 +204,15 @@ class SessionsScreenState extends State<SessionsScreen>
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _field('Notes (optional)', notesCtrl),
+                    _field(t('notes_optional'), notesCtrl),
                     const SizedBox(height: 16),
                     Row(
                       mainAxisAlignment:
                           MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Exercises',
-                          style: TextStyle(
+                        Text(
+                          t('exercises'),
+                          style: const TextStyle(
                               color: textMuted,
                               fontSize: 13,
                               fontWeight: FontWeight.w600),
@@ -225,14 +230,14 @@ class SessionsScreenState extends State<SessionsScreen>
                                   color:
                                       teal.withValues(alpha: 0.3)),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.add,
+                                const Icon(Icons.add,
                                     size: 14, color: teal),
-                                SizedBox(width: 4),
-                                Text('Add',
-                                    style: TextStyle(
+                                const SizedBox(width: 4),
+                                Text(t('add_exercise'),
+                                    style: const TextStyle(
                                         color: teal,
                                         fontSize: 12,
                                         fontWeight:
@@ -253,18 +258,18 @@ class SessionsScreenState extends State<SessionsScreen>
                           Expanded(
                               flex: 3,
                               child:
-                                  _field('Exercise', ex['name']!)),
+                                  _field(t('exercise_name'), ex['name']!)),
                           const SizedBox(width: 6),
                           Expanded(
-                              child: _field('Sets', ex['sets']!,
+                              child: _field(t('sets'), ex['sets']!,
                                   numeric: true)),
                           const SizedBox(width: 6),
                           Expanded(
-                              child: _field('Reps', ex['reps']!,
+                              child: _field(t('reps'), ex['reps']!,
                                   numeric: true)),
                           const SizedBox(width: 6),
                           Expanded(
-                              child: _field('kg', ex['kg']!,
+                              child: _field(t('weight_kg'), ex['kg']!,
                                   numeric: true)),
                           IconButton(
                             icon: const Icon(Icons.close,
@@ -325,6 +330,24 @@ class SessionsScreenState extends State<SessionsScreen>
                             if (notesCtrl.text.trim().isNotEmpty)
                               'notes': notesCtrl.text.trim(),
                           });
+                          // Add session cost to monthly gym cost
+                          final sessionCost =
+                              double.tryParse(costCtrl.text.trim()) ?? 0;
+                          if (sessionCost > 0) {
+                            final profile =
+                                await ApiService.instance.getProfile();
+                            final current =
+                                (profile?['monthlyGymCost'] as num?)
+                                    ?.toDouble() ??
+                                0;
+                            await ApiService.instance.saveProfile(
+                              monthlyGymCost: current + sessionCost,
+                              fitnessGoal: profile?['fitnessGoal'] as String? ??
+                                  'general',
+                              fitnessBadge:
+                                  profile?['fitnessBadge'] as String? ?? '',
+                            );
+                          }
                           // EXP + achievements
                           await ExpService.instance.earn(ExpReward.session);
                           await AchievementsService.instance.onSessionLogged();
@@ -343,9 +366,9 @@ class SessionsScreenState extends State<SessionsScreen>
                               vertical: 14),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          'Log session',
-                          style: TextStyle(
+                        child: Text(
+                          t('add_session'),
+                          style: const TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 15),
                         ),
@@ -401,8 +424,8 @@ class SessionsScreenState extends State<SessionsScreen>
                   color: textMuted, size: 32),
             ),
             const SizedBox(height: 16),
-            const Text('No sessions logged yet.',
-                style: TextStyle(color: textMuted, fontSize: 15)),
+            Text(t('no_sessions'),
+                style: const TextStyle(color: textMuted, fontSize: 15)),
           ],
         ),
       );
@@ -410,7 +433,7 @@ class SessionsScreenState extends State<SessionsScreen>
 
     return RefreshIndicator(
       color: teal,
-      backgroundColor: const Color(0xFF0C1525),
+      backgroundColor: surfaceColor,
       onRefresh: _load,
       child: ListView.separated(
         padding: EdgeInsets.only(

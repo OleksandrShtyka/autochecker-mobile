@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
+import '../l10n/strings.dart';
 import '../models/models.dart';
 import '../services/achievements_service.dart';
 import '../services/api_service.dart';
@@ -134,8 +135,8 @@ class SupplementsScreenState extends State<SupplementsScreen> {
                     const SizedBox(width: 10),
                     Text(
                       existing == null
-                          ? 'Add Supplement'
-                          : 'Edit Supplement',
+                          ? t('add_supplement')
+                          : t('edit_supplement'),
                       style: const TextStyle(
                           color: textPrimary,
                           fontSize: 17,
@@ -143,31 +144,31 @@ class SupplementsScreenState extends State<SupplementsScreen> {
                     ),
                   ]),
                   const SizedBox(height: 16),
-                  _field('Name', nameCtrl),
+                  _field(t('name'), nameCtrl),
                   const SizedBox(height: 12),
                   Row(children: [
                     Expanded(
-                        child: _field('Total weight (g)', totalCtrl,
+                        child: _field(t('supp_total_weight'), totalCtrl,
                             numeric: true)),
                     const SizedBox(width: 10),
                     Expanded(
-                        child: _field('Serving size (g)', servSizeCtrl,
+                        child: _field(t('supp_serving_size'), servSizeCtrl,
                             numeric: true)),
                   ]),
                   const SizedBox(height: 12),
                   Row(children: [
                     Expanded(
-                        child: _field('Servings/day', spdCtrl,
+                        child: _field(t('supp_frequency'), spdCtrl,
                             numeric: true)),
                     const SizedBox(width: 10),
                     Expanded(
-                        child: _field('Price (\$)', priceCtrl,
+                        child: _field(t('supp_price'), priceCtrl,
                             numeric: true)),
                   ]),
                   const SizedBox(height: 12),
-                  _field('Purchase date (YYYY-MM-DD)', dateCtrl),
+                  _field('Date (YYYY-MM-DD)', dateCtrl),
                   const SizedBox(height: 12),
-                  _field('Notes (optional)', notesCtrl),
+                  _field(t('notes_optional'), notesCtrl),
                   const SizedBox(height: 20),
                   Container(
                     decoration: BoxDecoration(
@@ -218,7 +219,7 @@ class SupplementsScreenState extends State<SupplementsScreen> {
                         elevation: 0,
                       ),
                       child: Text(
-                        existing == null ? 'Add' : 'Save',
+                        existing == null ? t('add_supplement') : t('save_profile'),
                         style: const TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 15),
                       ),
@@ -273,8 +274,8 @@ class SupplementsScreenState extends State<SupplementsScreen> {
                   color: textMuted, size: 32),
             ),
             const SizedBox(height: 16),
-            const Text('No supplements tracked yet.',
-                style: TextStyle(color: textMuted, fontSize: 15)),
+            Text(t('no_supplements'),
+                style: const TextStyle(color: textMuted, fontSize: 15)),
           ],
         ),
       );
@@ -282,7 +283,7 @@ class SupplementsScreenState extends State<SupplementsScreen> {
 
     return RefreshIndicator(
       color: teal,
-      backgroundColor: const Color(0xFF0C1525),
+      backgroundColor: surfaceColor,
       onRefresh: _load,
       child: ListView.separated(
         padding: EdgeInsets.only(
@@ -353,7 +354,7 @@ class SupplementsScreenState extends State<SupplementsScreen> {
                   ),
                 ),
                 PopupMenuButton<String>(
-                  color: const Color(0xFF0C1525),
+                  color: surfaceColor,
                   icon: const Icon(Icons.more_vert,
                       color: textMuted, size: 20),
                   onSelected: (v) async {
@@ -364,13 +365,13 @@ class SupplementsScreenState extends State<SupplementsScreen> {
                     }
                   },
                   itemBuilder: (_) => [
-                    const PopupMenuItem(
-                        value: 'edit', child: Text('Edit')),
-                    const PopupMenuItem(
+                    PopupMenuItem(
+                        value: 'edit', child: Text(t('edit'))),
+                    PopupMenuItem(
                       value: 'delete',
-                      child: Text('Delete',
+                      child: Text(t('delete'),
                           style:
-                              TextStyle(color: Color(0xFFEF4444))),
+                              const TextStyle(color: Color(0xFFEF4444))),
                     ),
                   ],
                 ),

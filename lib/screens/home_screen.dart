@@ -409,7 +409,7 @@ class _HomeScreenState extends State<HomeScreen>
         child: _glowFab(
           icon: Icons.camera_alt_rounded,
           label: t('calorie_scan_btn'),
-          color: const Color(0xFFFF6B35),
+          color: accentPurple,
           onTap: () => _calKey.currentState?.showScanner(),
         ),
       );
@@ -591,7 +591,7 @@ class _HomeScreenState extends State<HomeScreen>
                                             : const Color(0xFF22C55E),
                                     borderRadius: BorderRadius.circular(7),
                                     border: Border.all(
-                                        color: const Color(0xFF1C1917),
+                                        color: bgColor,
                                         width: 1.5),
                                   ),
                                   child: Text(
@@ -681,7 +681,7 @@ class _HomeScreenState extends State<HomeScreen>
     final rightItems = [
       (3, Icons.event_note_rounded, Icons.event_note_outlined, t('tab_program')),
       (4, Icons.camera_alt_rounded, Icons.camera_alt_outlined, t('tab_calories')),
-      (5, Icons.person_rounded, Icons.person_outlined, 'Profile'),
+      (5, Icons.person_rounded, Icons.person_outlined, t('tab_profile')),
     ];
 
     return Row(
@@ -804,10 +804,10 @@ class _HomeScreenState extends State<HomeScreen>
     }
     final hour = DateTime.now().hour;
     final greeting = hour < 12
-        ? 'Good morning'
+        ? t('greeting_morning')
         : hour < 17
-            ? 'Good afternoon'
-            : 'Good evening';
+            ? t('greeting_afternoon')
+            : t('greeting_evening');
 
     return RefreshIndicator(
       color: teal,
@@ -847,7 +847,7 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Track your progress today',
+                      t('track_progress'),
                       style: TextStyle(
                         color: c.muted,
                         fontSize: 14,
@@ -994,7 +994,7 @@ class _HomeScreenState extends State<HomeScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Today\'s Nutrition',
+                        t('today_nutrition'),
                         style: TextStyle(
                           color: c.text,
                           fontSize: 15,
@@ -1004,8 +1004,8 @@ class _HomeScreenState extends State<HomeScreen>
                       const SizedBox(height: 4),
                       Text(
                         remaining > 0
-                            ? '$remaining kcal remaining'
-                            : 'Goal reached!',
+                            ? '$remaining ${t('kcal_remaining')}'
+                            : t('goal_reached'),
                         style: TextStyle(
                           color: remaining > 0 ? c.muted : teal,
                           fontSize: 12,
@@ -1013,13 +1013,13 @@ class _HomeScreenState extends State<HomeScreen>
                         ),
                       ),
                       const SizedBox(height: 12),
-                      _macroRow('Protein', totals.protein, goals.protein.toDouble(),
+                      _macroRow(t('calorie_result_protein'), totals.protein, goals.protein.toDouble(),
                           macroProtein, c),
                       const SizedBox(height: 6),
-                      _macroRow('Carbs', totals.carbs, goals.carbs.toDouble(),
+                      _macroRow(t('calorie_result_carbs'), totals.carbs, goals.carbs.toDouble(),
                           macroCarbs, c),
                       const SizedBox(height: 6),
-                      _macroRow('Fat', totals.fat, goals.fat.toDouble(),
+                      _macroRow(t('calorie_result_fat'), totals.fat, goals.fat.toDouble(),
                           macroFat, c),
                     ],
                   ),
@@ -1346,16 +1346,81 @@ class _HomeScreenState extends State<HomeScreen>
             ],
           ),
           const SizedBox(height: 18),
-          TextField(
-            controller: _costCtrl,
-            keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-            decoration: InputDecoration(labelText: t('gym_cost_label')),
-            style: TextStyle(color: c.text),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _costCtrl,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(labelText: t('gym_cost_label')),
+                  style: TextStyle(color: c.text),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () async {
+                  final addCtrl = TextEditingController();
+                  await showDialog<void>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      backgroundColor: c.surface,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                      title: Text(t('add_to_cost'),
+                          style: TextStyle(color: c.text, fontSize: 16)),
+                      content: TextField(
+                        controller: addCtrl,
+                        autofocus: true,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        decoration: InputDecoration(
+                          labelText: t('add_amount'),
+                          labelStyle: TextStyle(color: c.textMuted),
+                          hintText: '0.00',
+                          hintStyle: TextStyle(color: c.textMuted),
+                        ),
+                        style: TextStyle(color: c.text),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: Text(t('cancel'),
+                              style: TextStyle(color: c.textMuted)),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            final current =
+                                double.tryParse(_costCtrl.text) ?? 0;
+                            final add = double.tryParse(addCtrl.text) ?? 0;
+                            _costCtrl.text =
+                                (current + add).toStringAsFixed(2);
+                            Navigator.pop(ctx);
+                          },
+                          child: Text(t('confirm'),
+                              style: TextStyle(color: c.primary)),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: c.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border:
+                        Border.all(color: c.primary.withValues(alpha: 0.3)),
+                  ),
+                  child: Icon(Icons.add, color: c.primary, size: 20),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            value: _goal,
+            initialValue: _goal,
             dropdownColor: c.surface,
             style: TextStyle(color: c.text),
             decoration: InputDecoration(

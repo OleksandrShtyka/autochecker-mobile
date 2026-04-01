@@ -564,7 +564,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         const Spacer(),
                         DropdownButton<int>(
                           value: _aiFrequencyDays,
-                          dropdownColor: const Color(0xFF0C1525),
+                          dropdownColor: surfaceColor,
                           style: const TextStyle(color: textPrimary),
                           underline: const SizedBox(),
                           items: [

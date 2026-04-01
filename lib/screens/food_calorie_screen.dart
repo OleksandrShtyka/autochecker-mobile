@@ -15,7 +15,7 @@ import '../widgets/animated_background.dart';
 import '../widgets/glass_card.dart';
 
 // ── Colors ───────────────────────────────────────────────────────────────────
-const _calColor     = Color(0xFFFF6B35);
+const _calColor     = teal;
 const _proteinColor = Color(0xFF60A5FA);
 const _carbsColor   = Color(0xFFF59E0B);
 const _fatColor     = Color(0xFFF87171);

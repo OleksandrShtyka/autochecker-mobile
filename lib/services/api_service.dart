@@ -105,11 +105,26 @@ class ApiService {
     String? context,
   }) async {
     final dio = await _client;
-    final body = <String, dynamic>{'messages': messages};
-    if (context != null && context.isNotEmpty) body['context'] = context;
-    final res = await dio.post('/api/ai/chat', data: body);
+    // Prepend context as a system message so AI has user fitness data
+    final allMessages = <Map<String, String>>[
+      if (context != null && context.isNotEmpty)
+        {'role': 'system', 'content': context},
+      ...messages,
+    ];
+    final res = await dio.post(
+      '/api/ai/chat',
+      data: {'messages': allMessages},
+      options: Options(receiveTimeout: const Duration(seconds: 45)),
+    );
     final data = res.data as Map<String, dynamic>;
-    return data['reply'] as String;
+    // Go API returns raw Groq/OpenAI completions format
+    final choices = data['choices'] as List?;
+    if (choices != null && choices.isNotEmpty) {
+      final msg = (choices[0] as Map)['message'] as Map?;
+      return msg?['content'] as String? ?? '';
+    }
+    // Legacy fallback
+    return data['reply'] as String? ?? data['content'] as String? ?? 'No response';
   }
 
   // ── Fitness profile ───────────────────────────────────────────
@@ -290,8 +305,21 @@ class ApiService {
     final res = await dio.post(
       '/api/ai/voice-action',
       data: {'transcript': transcript},
+      options: Options(receiveTimeout: const Duration(seconds: 30)),
     );
-    return res.data as Map<String, dynamic>;
+    final raw = res.data as Map<String, dynamic>;
+    // Go returns raw Groq OpenAI format — extract JSON from content
+    final choices = raw['choices'] as List?;
+    if (choices != null && choices.isNotEmpty) {
+      final content = ((choices[0] as Map)['message'] as Map?)?['content'] as String? ?? '';
+      final match = RegExp(r'\{[\s\S]*\}').firstMatch(content);
+      if (match != null) {
+        try {
+          return json.decode(match.group(0)!) as Map<String, dynamic>;
+        } catch (_) {}
+      }
+    }
+    return raw;
   }
 
   // ── Food Calorie Analysis ─────────────────────────────────────────────────
@@ -302,23 +330,30 @@ class ApiService {
     try {
       final res = await dio.post(
         '/api/ai/food-analyze',
-        data: {'image': base64Encode(bytes), 'mimeType': mimeType},
+        // Go handler expects 'imageBase64' (not 'image')
+        data: {'imageBase64': base64Encode(bytes), 'mimeType': mimeType},
         options: Options(
-          // Accept any status so Dio doesn't throw on 4xx — we read the body
           validateStatus: (s) => s != null && s < 600,
-          receiveTimeout: const Duration(seconds: 30),
+          receiveTimeout: const Duration(seconds: 40),
         ),
       );
-      final data = res.data as Map<String, dynamic>;
-      // Surface server-side errors as exceptions
+      final raw = res.data as Map<String, dynamic>;
       if (res.statusCode != 200) {
-        throw Exception(
-            data['message'] as String? ?? 'Server error ${res.statusCode}');
+        throw Exception(raw['message'] as String? ?? 'Server error ${res.statusCode}');
       }
-      return data;
+      // Go returns raw Groq OpenAI format — extract the JSON food object from content
+      final choices = raw['choices'] as List?;
+      if (choices != null && choices.isNotEmpty) {
+        final content = ((choices[0] as Map)['message'] as Map?)?['content'] as String? ?? '';
+        final match = RegExp(r'\{[\s\S]*\}').firstMatch(content);
+        if (match != null) {
+          return json.decode(match.group(0)!) as Map<String, dynamic>;
+        }
+      }
+      // Already a parsed object (fallback)
+      return raw;
     } on DioException catch (e) {
-      final msg = (e.response?.data as Map?)?.cast<String, dynamic>()?['message']
-          as String?;
+      final msg = (e.response?.data as Map<dynamic, dynamic>?)?.cast<String, dynamic>()['message'] as String?;
       throw Exception(msg ?? e.message ?? 'Network error');
     }
   }

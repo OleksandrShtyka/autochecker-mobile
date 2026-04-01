@@ -90,7 +90,7 @@ class HealthScreenState extends State<HealthScreen>
                   ? _buildConnect()
                   : RefreshIndicator(
                       color: _green,
-                      backgroundColor: const Color(0xFF0C1525),
+                      backgroundColor: surfaceColor,
                       onRefresh: _refresh,
                       child: _buildData(snap),
                     ),

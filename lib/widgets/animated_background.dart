@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme.dart';
 
-/// Calz-style clean static background — warm gradient, no blobs.
+/// Clean static background gradient.
 class AnimatedBackground extends StatelessWidget {
   const AnimatedBackground({super.key});
 
@@ -12,11 +12,11 @@ class AnimatedBackground extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: c.isDark
-              ? const [Color(0xFF1C1917), Color(0xFF232018), Color(0xFF1C1917)]
-              : const [Color(0xFFFBF9F7), Color(0xFFF5F0EA), Color(0xFFFBF9F7)],
+              ? const [Color(0xFF08091A), Color(0xFF0E1225), Color(0xFF08091A)]
+              : const [Color(0xFFF5F7FF), Color(0xFFEDF0FC), Color(0xFFF5F7FF)],
           stops: const [0.0, 0.5, 1.0],
         ),
       ),
