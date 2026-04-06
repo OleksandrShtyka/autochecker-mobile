@@ -76,6 +76,15 @@ class ApiService {
     return res.data as Map<String, dynamic>;
   }
 
+  Future<Map<String, dynamic>> loginWithSamsung(String accessToken, String email) async {
+    final dio = await _client;
+    final res = await dio.post('/api/auth/samsung', data: {
+      'accessToken': accessToken,
+      'email': email,
+    });
+    return res.data as Map<String, dynamic>;
+  }
+
   Future<void> verifyTotp(String code) async {
     final dio = await _client;
     await dio.post('/api/auth/totp/verify', data: {'code': code});

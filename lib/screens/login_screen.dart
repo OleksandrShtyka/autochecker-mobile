@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../services/api_service.dart';
 import '../services/samsung_auth_service.dart';
 import '../theme.dart';
+import 'samsung_auth_webview.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_card.dart';
 import 'home_screen.dart';
@@ -128,59 +129,26 @@ class _LoginScreenState extends State<LoginScreen>
   }
 
   Future<void> _loginWithSamsung() async {
-    final info = _samsungInfo;
-    if (info == null || !info.isSamsung) return;
-
+    if (_samsungInfo?.isSamsung != true) return;
     HapticFeedback.lightImpact();
-
-    // Pre-fill email if detected
-    if (info.email != null && info.email!.isNotEmpty) {
-      _emailCtrl.text = info.email!;
-    }
-
-    // If email is filled and password is empty → focus password
-    if (_passCtrl.text.isEmpty) {
-      setState(() {
-        _error = null;
-        _samsungLoading = false;
-      });
-      // Show snack to inform user
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const _SamsungLogoIcon(size: 16),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    info.email != null
-                        ? 'Samsung Account: ${info.email}\nEnter your password to continue.'
-                        : 'Enter your email and password.',
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: const Color(0xFF1428A0),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14)),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-      return;
-    }
-
-    // If both fields are filled → attempt login
     setState(() {
       _samsungLoading = true;
       _error = null;
     });
     try {
-      final result =
-          await ApiService.instance.login(_emailCtrl.text.trim(), _passCtrl.text);
+      // Launch Samsung Account OAuth 2.0 in-app WebView
+      final oauthResult = await SamsungAuthWebView.show(context);
+      if (!mounted) return;
+      if (oauthResult == null) {
+        setState(() => _samsungLoading = false);
+        return;
+      }
+
+      // Exchange Samsung access token with our backend
+      final result = await ApiService.instance.loginWithSamsung(
+        oauthResult.accessToken,
+        oauthResult.email,
+      );
       if (!mounted) return;
       if (result['mfa_required'] == true) {
         Navigator.of(context)
