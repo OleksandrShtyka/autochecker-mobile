@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../services/api_service.dart';
+import '../services/samsung_auth_service.dart';
 import '../theme.dart';
 import '../widgets/animated_background.dart';
 import '../widgets/glass_card.dart';
@@ -25,8 +26,10 @@ class _LoginScreenState extends State<LoginScreen>
   final _passCtrl = TextEditingController();
   bool _loading = false;
   bool _googleLoading = false;
+  bool _samsungLoading = false;
   String? _error;
   bool _obscure = true;
+  SamsungDeviceInfo? _samsungInfo;
 
   late AnimationController _entranceCtrl;
   late Animation<Offset> _cardSlide;
@@ -52,7 +55,11 @@ class _LoginScreenState extends State<LoginScreen>
       parent: _entranceCtrl,
       curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
     );
-    Future.microtask(() => _entranceCtrl.forward());
+    Future.microtask(() async {
+      _entranceCtrl.forward();
+      final info = await SamsungAuthService.getDeviceInfo();
+      if (mounted) setState(() => _samsungInfo = info);
+    });
   }
 
   @override
@@ -117,6 +124,75 @@ class _LoginScreenState extends State<LoginScreen>
       setState(() => _error = _parseError(e));
     } finally {
       if (mounted) setState(() => _googleLoading = false);
+    }
+  }
+
+  Future<void> _loginWithSamsung() async {
+    final info = _samsungInfo;
+    if (info == null || !info.isSamsung) return;
+
+    HapticFeedback.lightImpact();
+
+    // Pre-fill email if detected
+    if (info.email != null && info.email!.isNotEmpty) {
+      _emailCtrl.text = info.email!;
+    }
+
+    // If email is filled and password is empty → focus password
+    if (_passCtrl.text.isEmpty) {
+      setState(() {
+        _error = null;
+        _samsungLoading = false;
+      });
+      // Show snack to inform user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const _SamsungLogoIcon(size: 16),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    info.email != null
+                        ? 'Samsung Account: ${info.email}\nEnter your password to continue.'
+                        : 'Enter your email and password.',
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: const Color(0xFF1428A0),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
+    // If both fields are filled → attempt login
+    setState(() {
+      _samsungLoading = true;
+      _error = null;
+    });
+    try {
+      final result =
+          await ApiService.instance.login(_emailCtrl.text.trim(), _passCtrl.text);
+      if (!mounted) return;
+      if (result['mfa_required'] == true) {
+        Navigator.of(context)
+            .pushReplacement(_slideRoute((_) => const TotpScreen()));
+      } else {
+        Navigator.of(context)
+            .pushReplacement(_slideRoute((_) => const HomeScreen()));
+      }
+    } catch (e) {
+      setState(() => _error = _parseError(e));
+    } finally {
+      if (mounted) setState(() => _samsungLoading = false);
     }
   }
 
@@ -292,6 +368,17 @@ class _LoginScreenState extends State<LoginScreen>
                               onTap: _loginWithGoogle,
                               c: c,
                             ),
+
+                            // Samsung Account button (only on Samsung devices)
+                            if (_samsungInfo?.isSamsung == true) ...[
+                              const SizedBox(height: 10),
+                              _SamsungButton(
+                                loading: _samsungLoading,
+                                email: _samsungInfo?.email,
+                                onTap: _loginWithSamsung,
+                                c: c,
+                              ),
+                            ],
 
                             const SizedBox(height: 20),
 
@@ -630,6 +717,136 @@ class _GoogleLogo extends StatelessWidget {
       child: CustomPaint(painter: _GoogleLogoPainter()),
     );
   }
+}
+
+// ── Samsung Sign-In Button ────────────────────────────────────────────────────
+class _SamsungButton extends StatelessWidget {
+  final bool loading;
+  final String? email;
+  final VoidCallback onTap;
+  final AppColors c;
+
+  const _SamsungButton({
+    required this.loading,
+    required this.onTap,
+    required this.c,
+    this.email,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const samsungBlue = Color(0xFF1428A0);
+    const samsungBlueDark = Color(0xFF1E3FD4);
+
+    return SpringButton(
+      onTap: loading ? null : onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 56,
+        decoration: BoxDecoration(
+          gradient: loading
+              ? null
+              : const LinearGradient(
+                  colors: [samsungBlue, samsungBlueDark],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+          color: loading ? samsungBlue.withValues(alpha: 0.5) : null,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: loading
+              ? null
+              : [
+                  BoxShadow(
+                    color: samsungBlue.withValues(alpha: 0.45),
+                    blurRadius: 20,
+                    spreadRadius: -4,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+        ),
+        child: loading
+            ? const Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2.5, color: Colors.white),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const _SamsungLogoIcon(size: 22),
+                  const SizedBox(width: 12),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Continue with Samsung',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      if (email != null && email!.isNotEmpty)
+                        Text(
+                          email!,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.72),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+// ── Samsung Logo (S letter) ───────────────────────────────────────────────────
+class _SamsungLogoIcon extends StatelessWidget {
+  final double size;
+  const _SamsungLogoIcon({required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: CustomPaint(painter: _SamsungLogoPainter()),
+    );
+  }
+}
+
+class _SamsungLogoPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final w = size.width;
+    final h = size.height;
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = w * 0.13
+      ..strokeCap = StrokeCap.round;
+
+    // Draw stylized "S" for Samsung using arcs
+    final topArc = Rect.fromLTWH(w * 0.1, h * 0.04, w * 0.8, h * 0.46);
+    final bottomArc = Rect.fromLTWH(w * 0.1, h * 0.5, w * 0.8, h * 0.46);
+
+    // Top arc (curves right to left)
+    canvas.drawArc(topArc, -3.14, 2.9, false, paint);
+    // Bottom arc (curves left to right)
+    canvas.drawArc(bottomArc, 0.0, 2.9, false, paint);
+  }
+
+  @override
+  bool shouldRepaint(_SamsungLogoPainter old) => false;
 }
 
 class _GoogleLogoPainter extends CustomPainter {
