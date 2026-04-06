@@ -136,6 +136,22 @@ const _s = <String, Map<String, String>>{
     'supp_notes':           'Notes',
     'edit':                 'Edit',
 
+    // Weight Progression
+    'wp_title':          'Weight Progression',
+    'wp_empty':          'No exercise data yet',
+    'wp_empty_sub':      'Log sessions with exercises or add entries manually',
+    'wp_add_entry':      'Add entry',
+    'wp_analyze_btn':    'AI Analysis',
+    'wp_analyzing':      'Analyzing…',
+    'wp_ai_result':      'AI Recommendations',
+    'wp_improving':      'Improving',
+    'wp_stagnant':       'Stagnant',
+    'wp_declining':      'Declining',
+    'wp_records':        'records',
+    'wp_open':           'Weight Progression',
+    'wp_open_sub':       'Track your exercise weights and get AI corrections',
+    'add':               'Add',
+
     // Workout program tab
     'tab_program':           'Program',
     'program_title':         'Workout Program',
@@ -361,6 +377,22 @@ const _s = <String, Map<String, String>>{
     'supp_frequency':       'Частота',
     'supp_notes':           'Нотатки',
     'edit':                 'Редагувати',
+
+    // Weight Progression
+    'wp_title':          'Прогресія ваг',
+    'wp_empty':          'Даних по вправах ще немає',
+    'wp_empty_sub':      'Записуйте тренування з вправами або додайте записи вручну',
+    'wp_add_entry':      'Додати запис',
+    'wp_analyze_btn':    'Аналіз ШІ',
+    'wp_analyzing':      'Аналізую…',
+    'wp_ai_result':      'Рекомендації ШІ',
+    'wp_improving':      'Прогрес',
+    'wp_stagnant':       'Стагнація',
+    'wp_declining':      'Регрес',
+    'wp_records':        'записів',
+    'wp_open':           'Прогресія ваг',
+    'wp_open_sub':       'Відстежуй ваги у вправах і отримуй корективи від ШІ',
+    'add':               'Додати',
 
     // Workout program tab
     'tab_program':           'Програма',

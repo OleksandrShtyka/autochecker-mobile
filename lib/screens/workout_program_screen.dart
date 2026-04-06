@@ -6,6 +6,7 @@ import '../l10n/strings.dart';
 import '../services/api_service.dart';
 import '../theme.dart';
 import '../widgets/glass_card.dart';
+import 'weight_progression_screen.dart';
 
 const _prefKey = 'workout_program_v1';
 
@@ -702,6 +703,9 @@ class WorkoutProgramScreenState extends State<WorkoutProgramScreen>
         // AI generate button always visible at top
         _buildAiGenerateCard(),
         const SizedBox(height: 16),
+        // Weight progression entry
+        _buildProgressionCard(),
+        const SizedBox(height: 16),
         // Program content
         GlassCard(
           padding: const EdgeInsets.all(18),
@@ -722,7 +726,11 @@ class WorkoutProgramScreenState extends State<WorkoutProgramScreen>
       children: [
         // AI generate button — main CTA
         _buildAiGenerateCard(),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
+
+        // Weight progression entry
+        _buildProgressionCard(),
+        const SizedBox(height: 16),
 
         // Manual option
         GestureDetector(
@@ -773,6 +781,64 @@ class WorkoutProgramScreenState extends State<WorkoutProgramScreen>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildProgressionCard() {
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => WeightProgressionScreen(currentProgram: _program),
+        ),
+      ),
+      child: GlassCard(
+        padding: const EdgeInsets.all(18),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    teal.withValues(alpha: 0.25),
+                    blue.withValues(alpha: 0.15),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: teal.withValues(alpha: 0.3)),
+              ),
+              child: const Icon(Icons.trending_up_rounded,
+                  color: teal, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    t('wp_open'),
+                    style: const TextStyle(
+                      color: textPrimary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    t('wp_open_sub'),
+                    style: const TextStyle(
+                        color: textMuted, fontSize: 12),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded,
+                color: textMuted, size: 20),
+          ],
+        ),
+      ),
     );
   }
 
